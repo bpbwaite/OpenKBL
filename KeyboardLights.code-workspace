@@ -1,0 +1,14 @@
+{
+  "folders": [
+    {
+      "path": ".",
+    },
+    { 
+		"path": "keyboard-lights-firmware" 
+	},
+    {
+      "path": "keyboard-lights-firmware/.pio/libdeps/seeed_xiao_esp32c3/FastLED/examples/LuminescentGrand",
+    },
+  ],
+  "settings": {},
+}
