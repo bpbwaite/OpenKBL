@@ -4421,6 +4421,16 @@
 		)
 		(uuid "56c5570c-e542-432c-b8c1-06138994efa3")
 	)
+	(text "no rotary encoder-full midi device control"
+		(exclude_from_sim no)
+		(at 157.988 103.886 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "7e98bfa0-823e-4594-88cf-bc6e174ef9a7")
+	)
 	(junction
 		(at 85.09 278.13)
 		(diameter 0)
@@ -4432,12 +4442,6 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "1609512d-24dd-4884-beaa-3046fd3bcd47")
-	)
-	(junction
-		(at 259.08 46.99)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "1caf3732-05da-4d77-bc7d-386db252557d")
 	)
 	(junction
 		(at 233.68 240.03)
@@ -4480,12 +4484,6 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "60772677-d0ca-4ab2-93e0-2b798eabdab6")
-	)
-	(junction
-		(at 228.6 55.88)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "63a6eb12-5fd7-4b55-a0c0-7b23417078c0")
 	)
 	(junction
 		(at 259.08 106.68)
@@ -4536,22 +4534,10 @@
 		(uuid "bbd3d3bf-a009-4d9d-8728-30cef9409090")
 	)
 	(junction
-		(at 259.08 54.61)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "d1cfedc1-a0cf-4e58-ad2f-284e27546a70")
-	)
-	(junction
 		(at 57.15 118.11)
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "d2f59b82-1335-42a1-a46e-fee3e8b2d8a4")
-	)
-	(junction
-		(at 241.3 55.88)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "dc1760b6-4bb5-4f60-8a01-f8cf682a469a")
 	)
 	(junction
 		(at 46.99 22.86)
@@ -4564,10 +4550,6 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "f1e8ec6b-83e3-447c-8a1d-befec11a09eb")
-	)
-	(no_connect
-		(at 171.45 35.56)
-		(uuid "1eddd43b-43a8-4971-98af-fe17d842e049")
 	)
 	(no_connect
 		(at 147.32 68.58)
@@ -4642,16 +4624,6 @@
 			(type default)
 		)
 		(uuid "0d8892b3-0a34-48e2-b03c-a501cccaae6a")
-	)
-	(wire
-		(pts
-			(xy 228.6 59.69) (xy 231.14 59.69)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "0d9d808c-6fd6-4995-a709-4faa8bc51faf")
 	)
 	(wire
 		(pts
@@ -5035,16 +5007,6 @@
 	)
 	(wire
 		(pts
-			(xy 241.3 55.88) (xy 243.84 55.88)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "75e6d7bb-158d-40df-9407-55873aee006b")
-	)
-	(wire
-		(pts
 			(xy 171.45 39.37) (xy 184.15 39.37)
 		)
 		(stroke
@@ -5062,16 +5024,6 @@
 			(type default)
 		)
 		(uuid "784497d6-3163-4c0c-84bf-86c029cc8e07")
-	)
-	(wire
-		(pts
-			(xy 241.3 55.88) (xy 241.3 59.69)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "78d4f641-3029-43bd-a8b1-639b9e35fbe5")
 	)
 	(wire
 		(pts
@@ -5155,17 +5107,7 @@
 	)
 	(wire
 		(pts
-			(xy 228.6 55.88) (xy 231.14 55.88)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "8827bf50-4118-4bc8-9d1e-a38158242bdf")
-	)
-	(wire
-		(pts
-			(xy 226.06 55.88) (xy 228.6 55.88)
+			(xy 226.06 55.88) (xy 231.14 55.88)
 		)
 		(stroke
 			(width 0)
@@ -5245,26 +5187,6 @@
 	)
 	(wire
 		(pts
-			(xy 238.76 59.69) (xy 241.3 59.69)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "9e7cdaa5-f563-4a5f-985f-1249aadf0d40")
-	)
-	(wire
-		(pts
-			(xy 228.6 55.88) (xy 228.6 59.69)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "9f980e79-b7a6-420b-b82a-549cd936cd1f")
-	)
-	(wire
-		(pts
 			(xy 156.21 20.32) (xy 156.21 24.13)
 		)
 		(stroke
@@ -5295,16 +5217,6 @@
 	)
 	(wire
 		(pts
-			(xy 255.27 54.61) (xy 259.08 54.61)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "a743a6bb-e300-4990-b24e-cbbfbfb8fc22")
-	)
-	(wire
-		(pts
 			(xy 223.52 88.9) (xy 229.87 88.9)
 		)
 		(stroke
@@ -5322,6 +5234,16 @@
 			(type default)
 		)
 		(uuid "ab6990f0-f300-428c-87b6-36944f9a96ae")
+	)
+	(wire
+		(pts
+			(xy 88.9 60.96) (xy 88.9 63.5)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "abac26fc-2396-4aa3-8c83-9c178452bc77")
 	)
 	(wire
 		(pts
@@ -5382,16 +5304,6 @@
 			(type default)
 		)
 		(uuid "bba11d20-206a-4a0e-b77f-89e2861223b9")
-	)
-	(wire
-		(pts
-			(xy 255.27 46.99) (xy 259.08 46.99)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "bd8355be-9bf3-464c-ad69-bf4d617407a2")
 	)
 	(wire
 		(pts
@@ -5585,6 +5497,16 @@
 	)
 	(wire
 		(pts
+			(xy 88.9 63.5) (xy 96.52 63.5)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "e7d626d4-2a31-476a-b0d4-79b820fbc14f")
+	)
+	(wire
+		(pts
 			(xy 68.58 115.57) (xy 68.58 118.11)
 		)
 		(stroke
@@ -5615,7 +5537,7 @@
 	)
 	(wire
 		(pts
-			(xy 238.76 55.88) (xy 241.3 55.88)
+			(xy 238.76 55.88) (xy 243.84 55.88)
 		)
 		(stroke
 			(width 0)
@@ -6426,6 +6348,30 @@
 			)
 		)
 	)
+	(global_label "VBUS"
+		(shape input)
+		(at 171.45 35.56 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "6dedf20a-a606-4597-9e69-98ff332c4e0e")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 179.3338 35.56 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+	)
 	(global_label "ROT_SW"
 		(shape input)
 		(at 269.24 106.68 0)
@@ -6471,6 +6417,30 @@
 					(size 1.27 1.27)
 				)
 				(justify right)
+			)
+		)
+	)
+	(global_label "VBUS"
+		(shape input)
+		(at 106.68 63.5 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "9533edbc-beff-4d39-9d17-6f0c126729b4")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 114.5638 63.5 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
 			)
 		)
 	)
@@ -9727,96 +9697,6 @@
 		)
 	)
 	(symbol
-		(lib_id "Device:R_US")
-		(at 234.95 59.69 270)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp yes)
-		(uuid "477289bf-a7ff-4608-88cd-a8b5fba8519d")
-		(property "Reference" "R7"
-			(at 236.982 50.8 90)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "TBD"
-			(at 236.982 53.34 90)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal"
-			(at 234.696 60.706 90)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 234.95 59.69 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "Resistor, US symbol"
-			(at 234.95 59.69 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "AlreadyHave" ""
-			(at 234.95 59.69 90)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "8cfa4148-9b5a-40cd-aca5-cef36d0b41e8")
-		)
-		(pin "2"
-			(uuid "61f1082e-2b74-45ab-ab4b-c8f5288586a3")
-		)
-		(instances
-			(project "piano-pcb"
-				(path "/28aa0329-2ca6-4094-919e-5c74a6960739"
-					(reference "R7")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "power:+5V")
 		(at 215.9 229.87 0)
 		(unit 1)
@@ -12123,6 +12003,96 @@
 		)
 	)
 	(symbol
+		(lib_id "Jumper:SolderJumper_2_Open")
+		(at 101.6 63.5 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom no)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "7a00b0d4-4413-4ef5-be12-dff78c8884fd")
+		(property "Reference" "JP2"
+			(at 101.346 66.294 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "SolderJumper_2_Open"
+			(at 101.346 68.834 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Jumper:SolderJumper-2_P1.3mm_Open_TrianglePad1.0x1.5mm"
+			(at 101.6 63.5 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 101.6 71.12 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Solder Jumper, 2-pole, open"
+			(at 101.6 68.58 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "AlreadyHave" ""
+			(at 101.6 63.5 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "4acc613a-bbc7-42fe-a677-ab9fb8b8b48f")
+		)
+		(pin "2"
+			(uuid "09b66e72-0d7f-427a-b265-6b63428d9f4a")
+		)
+		(instances
+			(project "piano-pcb"
+				(path "/28aa0329-2ca6-4094-919e-5c74a6960739"
+					(reference "JP2")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "Device:C_Small")
 		(at 223.52 118.11 0)
 		(unit 1)
@@ -12895,96 +12865,6 @@
 			(project "piano-pcb"
 				(path "/28aa0329-2ca6-4094-919e-5c74a6960739"
 					(reference "D15")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Device:R_US")
-		(at 255.27 50.8 0)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp yes)
-		(uuid "856ed1c0-90a2-43ea-837f-6830213077d5")
-		(property "Reference" "R8"
-			(at 251.714 49.53 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "TBD"
-			(at 251.714 52.07 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal"
-			(at 256.286 51.054 90)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 255.27 50.8 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "Resistor, US symbol"
-			(at 255.27 50.8 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "AlreadyHave" ""
-			(at 255.27 50.8 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "8d1ec49e-ed09-4073-9343-b1ee1ece7bfe")
-		)
-		(pin "2"
-			(uuid "e3eb7964-3fd0-49ac-a443-122109a55052")
-		)
-		(instances
-			(project "piano-pcb"
-				(path "/28aa0329-2ca6-4094-919e-5c74a6960739"
-					(reference "R8")
 					(unit 1)
 				)
 			)
@@ -17041,6 +16921,83 @@
 		)
 	)
 	(symbol
+		(lib_id "power:+5V")
+		(at 88.9 60.96 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "c842c697-ada1-4666-a07c-49516a0e961b")
+		(property "Reference" "#PWR089"
+			(at 88.9 64.77 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "+5V"
+			(at 85.852 59.182 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 88.9 60.96 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 88.9 60.96 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"+5V\""
+			(at 88.9 60.96 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "1161ce7b-29ac-4525-9580-c6d3ea3ea71f")
+		)
+		(instances
+			(project "piano-pcb"
+				(path "/28aa0329-2ca6-4094-919e-5c74a6960739"
+					(reference "#PWR089")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "LED:WS2812B")
 		(at 185.42 237.49 0)
 		(unit 1)
@@ -17427,7 +17384,7 @@
 		(dnp no)
 		(uuid "ce276dcc-3500-4243-9cd3-ffc838f5131d")
 		(property "Reference" "R6"
-			(at 232.664 50.8 90)
+			(at 234.95 50.8 90)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -17437,7 +17394,7 @@
 			)
 		)
 		(property "Value" "220"
-			(at 232.664 53.34 90)
+			(at 234.95 53.34 90)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
