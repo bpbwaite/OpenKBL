@@ -39,6 +39,11 @@ namespace kbl {
         // of the strip (last LED) at full power. Used to even out brightness along the strip.
         static const float FAR_END_VOLTAGE = 4.92;
 
+        // Measured with the brightness_floor test: below this, an LED flickers or shows the
+        // wrong color. It's the lowest the largest of R, G and B may be when it reaches the strip,
+        // after every scaling step. F#1 (10, or 9.5 dithered) was the highest key that flickered.
+        static const uint8_t MIN_PEAK = 11;
+
         // napkin math: fet is probably not limited by power dissipation
         // with R_ds_on at <6 mOhm at 3.3 V, we dissipate 30 mW from 5A
         // worst case 160C/W -> ~5C rise at 25C

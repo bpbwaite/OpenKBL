@@ -43,6 +43,8 @@ uint32_t modeSelectKeyDownMs = 0;
 
 LightMode lightMode = kbl::lights::DEFAULT_LIGHT_MODE;
 uint8_t masterBrightness = kbl::lights::MASTER_BRIGHTNESS_STEPS;
+uint8_t masterScale = 255; // FastLED global brightness for masterBrightness, before power limiting
+uint32_t powerBudgetMW = kbl::leds::PSU_MAX_MA * kbl::leds::PSU_VOLTAGE;
 
 // While a preview runs it takes over every LED; key state keeps updating underneath.
 CRGB previewLEDs[kbl::leds::NUM_LEDS];
@@ -51,7 +53,7 @@ uint32_t previewDurationMs = 0; // 0 = no preview running
 
 uint8_t velocityBrightness(uint8_t velocity)
 {
-    return map(velocity, 1, 127, kbl::lights::MIN_BRIGHTNESS, 255);
+    return map(velocity, 1, 127, kbl::leds::MIN_PEAK, 255);
 }
 
 // PitchClass of a key, 0 = C ... 11 = B
@@ -180,7 +182,7 @@ void showBrightnessBar()
 void setMasterBrightness(int level)
 {
     masterBrightness = constrain(level, 1, kbl::lights::MASTER_BRIGHTNESS_STEPS);
-    FastLED.setBrightness(masterBrightness * 255 / kbl::lights::MASTER_BRIGHTNESS_STEPS);
+    masterScale = masterBrightness * 255 / kbl::lights::MASTER_BRIGHTNESS_STEPS;
     debugf("Master brightness: %d\n", masterBrightness);
     showBrightnessBar();
 }
@@ -319,7 +321,40 @@ void onRotaryPress()
     kbl::demo::start();
 }
 
-void renderKeys()
+// Smallest buffer value that still reaches the strip as at least MIN_PEAK under global
+// brightness `scale`. FastLED sends (value * (scale + 1)) >> 8; dithering only adds to that.
+uint8_t floorBeforeScale(uint8_t scale)
+{
+    uint16_t value = ((uint16_t)kbl::leds::MIN_PEAK * 256 + scale) / (scale + 1); // rounded up
+    return min<uint16_t>(value, 255);
+}
+
+// Keeps every LED out of the flickering range: lit LEDs below the floor are raised to it,
+// keeping their color, and fading LEDs that drop below it go dark.
+void applyBrightnessFloor(const CRGB *target, uint8_t scale)
+{
+    const uint8_t floorPeak = floorBeforeScale(scale);
+    for (uint8_t i = 0; i < kbl::leds::NUM_LEDS; i++)
+    {
+        CRGB &led = kblLEDs[i];
+        uint8_t peak = max(led.r, max(led.g, led.b));
+        if (peak == 0 || peak >= floorPeak)
+            continue;
+        if (target[i])
+        {
+            led = CRGB((led.r * floorPeak + peak / 2) / peak,
+                       (led.g * floorPeak + peak / 2) / peak,
+                       (led.b * floorPeak + peak / 2) / peak);
+        }
+        else
+        {
+            led = CRGB::Black;
+        }
+    }
+}
+
+// Fills kblLEDs and returns the global brightness to show them with.
+uint8_t renderKeys()
 {
     CRGB frame[kbl::leds::NUM_LEDS];
     const CRGB *target = frame;
@@ -344,6 +379,18 @@ void renderKeys()
             kblLEDs[i].fadeToBlackBy(kbl::lights::FADE_PER_FRAME);
         }
     }
+
+    // Power limiting is done here rather than by FastLED, so the floor can allow for it.
+    uint8_t scale = calculate_max_brightness_for_power_mW(kblLEDs, kbl::leds::NUM_LEDS, masterScale, powerBudgetMW);
+    applyBrightnessFloor(target, scale);
+    // raising dim LEDs adds a little power; settle once more
+    uint8_t settled = calculate_max_brightness_for_power_mW(kblLEDs, kbl::leds::NUM_LEDS, scale, powerBudgetMW);
+    if (settled < scale)
+    {
+        scale = settled;
+        applyBrightnessFloor(target, scale);
+    }
+    return scale;
 }
 
 void setup()
@@ -369,14 +416,13 @@ void setup()
 
     FastLED.addLeds<WS2812B, kbl::pins::RGB_DATA, EOrder::GRB>(kblLEDs, kbl::leds::NUM_LEDS);
 
-    FastLED.setMaxPowerInMilliWatts(kbl::leds::PSU_MAX_MA * kbl::leds::PSU_VOLTAGE);
     if (PCB_REVISION == 0)
     {
         // the board may or may not be running on USB, so we should limit current to around 500mA
         // I'll uncomment this line when I deploy the board
         // Alternative smart thing to do: assume the PSU is connected, but if we detect a PC connection at any point during operation,
         // limit draw to 500mA.
-        FastLED.setMaxPowerInMilliWatts(kbl::leds::USB_MAX_MA * kbl::leds::PSU_VOLTAGE);
+        powerBudgetMW = kbl::leds::USB_MAX_MA * kbl::leds::PSU_VOLTAGE;
     }
 
     buildSagCompensation();
@@ -409,8 +455,7 @@ void loop()
 
     EVERY_N_MILLISECONDS(kbl::lights::FRAME_MS)
     {
-        renderKeys();
-        FastLED.show();
+        FastLED.show(renderKeys()); // dithering stays on (FastLED's default)
     }
 
     EVERY_N_SECONDS(kbl::debug::FPS_REPORT_S)
