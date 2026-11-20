@@ -4,8 +4,8 @@
 
 #include "hardware.h"
 
-// Rotary encoder polling. The encoder rests with A and B both high, and the PCB's
-// capacitors filter contact bounce on the encoder lines.
+// Rotary encoder polling. The encoder rests with A and B both high. Direction and switch
+// debounce are in hardware.h.
 
 // defined in main.cpp
 void onRotaryTurn(int steps);
@@ -13,9 +13,6 @@ void onRotaryPress();
 
 namespace kbl {
     namespace rotary {
-        static const int8_t CLOCKWISE = 1; // flip the sign if turning clockwise dims the LEDs
-        static const uint32_t SWITCH_DEBOUNCE_MS = 20;
-
         // quadrature step for each (previous A,B << 2 | current A,B)
         static const int8_t TRANSITIONS[16] = {
             0, -1, 1, 0,

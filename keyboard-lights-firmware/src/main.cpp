@@ -6,55 +6,14 @@
 #include "midi_util.h"
 #include "light_modes.h"
 #include "chord_modes.h"
-#include "key_colors.h"
+#include "key_state.h"
+#include "demo_mode.h"
 #include "serial_commands.h"
 #include "rotary_encoder.h"
 
-namespace kbl
-{
-    namespace keys
-    {
-        static const uint8_t MIDI_NOTE_LOWEST = 21;                                     // A0, maps to LED 0
-        static const uint8_t MIDI_NOTE_HIGHEST = MIDI_NOTE_LOWEST + leds::NUM_LEDS - 1; // C8
-        static const uint8_t MIDI_CC_SUSTAIN = 64;
-        static const uint8_t MIDI_CC_ALL_SOUND_OFF = 120;
-        static const uint8_t MIDI_CC_ALL_NOTES_OFF = 123;
-    }
-    namespace lights
-    {
-        static const uint32_t FRAME_MS = 10;      // ~100 fps; fade speed depends on this
-        static const uint8_t FADE_PER_FRAME = 40; // out of 255, applied to released keys
-        static const uint8_t BASE_HUE = HUE_AQUA;
-        static const uint8_t MIN_BRIGHTNESS = 32;          // so the softest notes are still visible
-        static const uint8_t MASTER_BRIGHTNESS_STEPS = 16; // lowest step keeps the softest notes visible
-        static const uint32_t MODE_PREVIEW_MS = 500;
-        static const uint32_t BRIGHTNESS_BAR_MS = 1000;
-    }
-    namespace demo
-    {
-        static const uint32_t IDLE_MS = 5 * 60 * 1000; // starts by itself after this long without playing
-        static const uint32_t ROLL_MS = 50;
-        static const uint16_t ROLL_MAX = 400;          // a roll below NUM_LEDS lights that key, so higher = sparser
-        static const uint32_t KEY_MS = 1000;
-    }
-}
-
 CRGB kblLEDs[kbl::leds::NUM_LEDS];
 
-struct KeyState
-{
-    bool held;      // key is physically down
-    bool sustained; // key was released while the sustain pedal was down
-    uint8_t velocity;
-};
-
 KeyState keyStates[kbl::leds::NUM_LEDS];
-
-// Simulated keys for Demo Mode, kept apart from keyStates so they can't trigger Mode Select.
-KeyState demoKeys[kbl::leds::NUM_LEDS];
-uint32_t demoKeyStartMs[kbl::leds::NUM_LEDS];
-bool demoMode = false;
-uint32_t lastActivityMs = 0; // last key or sustain pedal event
 
 // Per-LED brightness scale (255 = unscaled) compensating for supply sag along the strip.
 // Assumes the drop grows linearly from LED 0 (supply end) to FAR_END_VOLTAGE at the last LED,
@@ -82,18 +41,13 @@ bool sustainPedalDown = false;
 bool modeSelectArmed = false;
 uint32_t modeSelectKeyDownMs = 0;
 
-LightMode lightMode = LightMode::PitchHue;
+LightMode lightMode = kbl::lights::DEFAULT_LIGHT_MODE;
 uint8_t masterBrightness = kbl::lights::MASTER_BRIGHTNESS_STEPS;
 
 // While a preview runs it takes over every LED; key state keeps updating underneath.
 CRGB previewLEDs[kbl::leds::NUM_LEDS];
 uint32_t previewStartMs = 0;
 uint32_t previewDurationMs = 0; // 0 = no preview running
-
-bool isSounding(const KeyState &key)
-{
-    return key.held || key.sustained;
-}
 
 uint8_t velocityBrightness(uint8_t velocity)
 {
@@ -240,48 +194,10 @@ void clearKeys()
     modeSelectArmed = false;
 }
 
-// also clears stuck keys, for when the piano never sends a note-off
-void enterDemoMode()
+void onDemoModeStart()
 {
-    if (demoMode)
-        return;
     clearKeys();
     sustainPedalDown = false;
-    demoMode = true;
-    debugf("Demo mode: on\n");
-}
-
-void exitDemoMode()
-{
-    if (!demoMode)
-        return;
-    demoMode = false;
-    for (KeyState &key : demoKeys)
-    {
-        key = {};
-    }
-    debugf("Demo mode: off\n");
-}
-
-void updateDemoKeys()
-{
-    for (uint8_t i = 0; i < kbl::leds::NUM_LEDS; i++)
-    {
-        if (demoKeys[i].held && millis() - demoKeyStartMs[i] >= kbl::demo::KEY_MS)
-        {
-            demoKeys[i].held = false;
-        }
-    }
-    EVERY_N_MILLISECONDS(kbl::demo::ROLL_MS)
-    {
-        uint32_t roll = random(kbl::demo::ROLL_MAX + 1);
-        if (roll < kbl::leds::NUM_LEDS)
-        {
-            demoKeys[roll].held = true;
-            demoKeys[roll].velocity = random(1, 128);
-            demoKeyStartMs[roll] = millis();
-        }
-    }
 }
 
 // returns -1 for notes outside the 88-key range
@@ -330,8 +246,8 @@ void handleNoteOn(byte channel, byte note, byte velocity)
 #ifdef KBL_USB_MIDI_DEBUG
     debugf("Note: %d\n", note);
 #endif
-    lastActivityMs = millis();
-    exitDemoMode();
+    kbl::demo::recordActivity();
+    kbl::demo::stop();
 
     if (i == kbl::chords::MODE_SELECT_KEY)
     {
@@ -356,7 +272,7 @@ void handleNoteOff(byte channel, byte note, byte velocity)
     if (i < 0)
         return;
 
-    lastActivityMs = millis();
+    kbl::demo::recordActivity();
 
     if (i == kbl::chords::MODE_SELECT_KEY)
     {
@@ -369,20 +285,20 @@ void handleNoteOff(byte channel, byte note, byte velocity)
 
 void handleControlChange(byte channel, byte number, byte value)
 {
-    if (number == kbl::keys::MIDI_CC_ALL_SOUND_OFF || number == kbl::keys::MIDI_CC_ALL_NOTES_OFF)
+    if (number == kbl::midi::CC_ALL_SOUND_OFF || number == kbl::midi::CC_ALL_NOTES_OFF)
     {
         clearKeys();
         return;
     }
-    if (number != kbl::keys::MIDI_CC_SUSTAIN)
+    if (number != kbl::midi::CC_SUSTAIN)
         return;
 
-    lastActivityMs = millis();
+    kbl::demo::recordActivity();
 
     sustainPedalDown = value >= 64;
     if (sustainPedalDown)
     {
-        exitDemoMode();
+        kbl::demo::stop();
     }
     else
     {
@@ -400,7 +316,7 @@ void onRotaryTurn(int steps)
 
 void onRotaryPress()
 {
-    enterDemoMode();
+    kbl::demo::start();
 }
 
 void renderKeys()
@@ -413,7 +329,7 @@ void renderKeys()
     }
     else
     {
-        computeTargets(frame, demoMode ? demoKeys : keyStates);
+        computeTargets(frame, kbl::demo::active() ? kbl::demo::keys() : keyStates);
     }
 
     for (uint8_t i = 0; i < kbl::leds::NUM_LEDS; i++)
@@ -460,7 +376,7 @@ void setup()
         // I'll uncomment this line when I deploy the board
         // Alternative smart thing to do: assume the PSU is connected, but if we detect a PC connection at any point during operation,
         // limit draw to 500mA.
-        FastLED.setMaxPowerInMilliWatts(500.0 * kbl::leds::PSU_VOLTAGE);
+        FastLED.setMaxPowerInMilliWatts(kbl::leds::USB_MAX_MA * kbl::leds::PSU_VOLTAGE);
     }
 
     buildSagCompensation();
@@ -489,14 +405,7 @@ void loop()
     serialCommandsPoll(); // no-op unless KBL_USB_MIDI_DEBUG
     rotaryPoll();
 
-    if (!demoMode && millis() - lastActivityMs >= kbl::demo::IDLE_MS)
-    {
-        enterDemoMode();
-    }
-    if (demoMode)
-    {
-        updateDemoKeys();
-    }
+    kbl::demo::poll();
 
     EVERY_N_MILLISECONDS(kbl::lights::FRAME_MS)
     {
@@ -504,7 +413,7 @@ void loop()
         FastLED.show();
     }
 
-    EVERY_N_SECONDS(10)
+    EVERY_N_SECONDS(kbl::debug::FPS_REPORT_S)
     {
         debugf("FastLED at %d fps\n", FastLED.getFPS());
     }

@@ -5,6 +5,9 @@
 #include "app_conf.h"
 #include "light_modes.h"
 #include "chord_modes.h"
+#include "demo_mode.h"
+#include "hardware.h"
+#include "midi_util.h"
 
 // Typed MIDI test commands over USB serial, for testing without a piano.
 // Enable with -DKBL_USB_MIDI_DEBUG in platformio.ini. Type `help` for commands.
@@ -17,17 +20,13 @@ void handleNoteOff(byte channel, byte note, byte velocity);
 void handleControlChange(byte channel, byte number, byte value);
 void setLightMode(LightMode mode);
 void setMasterBrightness(int level);
-void enterDemoMode();
 
 namespace kbl {
     namespace serialcmd {
-        static const size_t MAX_LINE_CHARS = 64;
-        static const size_t MAX_NOTES = 16;
-        static const uint8_t DEFAULT_VELOCITY = 100;
         static const byte CHANNEL = 1; // handlers ignore it
-        static const uint8_t NOTE_LOWEST = 21;  // A0
-        static const uint8_t NOTE_HIGHEST = 108; // C8
-        static const byte CC_SUSTAIN = 64;
+        static const uint8_t NOTE_LOWEST = keys::MIDI_NOTE_LOWEST;
+        static const uint8_t NOTE_HIGHEST = keys::MIDI_NOTE_HIGHEST;
+        static const byte CC_SUSTAIN = midi::CC_SUSTAIN;
 
         inline bool isNumber(const char* s) {
             if (!*s) return false;
@@ -175,7 +174,7 @@ namespace kbl {
             else if (strcasecmp(cmd, "release") == 0) cmdRelease();
             else if (strcasecmp(cmd, "mode") == 0)    cmdMode(args, argc);
             else if (strcasecmp(cmd, "bright") == 0)  cmdBright(args, argc);
-            else if (strcasecmp(cmd, "demo") == 0)    enterDemoMode();
+            else if (strcasecmp(cmd, "demo") == 0)    demo::start();
             else if (strcasecmp(cmd, "help") == 0)    printHelp();
             else debugf("? unknown command '%s' (type help)\n", cmd);
         }

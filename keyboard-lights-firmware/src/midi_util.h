@@ -5,6 +5,15 @@
 
 #include "hardware.h"
 
+// MIDI protocol constants
+namespace kbl {
+    namespace midi {
+        static const uint8_t CC_SUSTAIN = 64;
+        static const uint8_t CC_ALL_SOUND_OFF = 120;
+        static const uint8_t CC_ALL_NOTES_OFF = 123;
+    }
+}
+
 class MidiSerialTransport {
 public:
     explicit MidiSerialTransport(HardwareSerial& serial) : serial_(serial) {}

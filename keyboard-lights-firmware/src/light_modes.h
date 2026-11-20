@@ -10,8 +10,8 @@ enum class LightMode : uint8_t {
     VelocityBrightness, // fixed hue, harder presses are brighter
     FullBrightness,     // fixed hue, always full brightness
     PitchHue,           // rainbow across the keyboard, velocity brightness
-    KeyColors,          // per-PitchClass colors from key_colors.h, velocity brightness
-    AllOctaves,         // pressing a key lights its PitchClass in every octave, key_colors.h colors
+    KeyColors,          // per-PitchClass colors from app_conf.h, velocity brightness
+    AllOctaves,         // pressing a key lights its PitchClass in every octave, app_conf.h key colors
     COUNT
 };
 
