@@ -69,7 +69,7 @@ namespace kbl {
             for (uint8_t i = 0; i < (uint8_t)LightMode::COUNT; i++) {
                 debugf(" %d=%s", i, lightModeName((LightMode)i));
             }
-            debugf("\n  bright <level>       master brightness\n");
+            debugf("\n  bright <1-%d>        master brightness\n", lights::MASTER_BRIGHTNESS_STEPS);
             debugf("  demo                 start demo mode; on <note> or sus on stops it\n");
             debugf("  help\n");
         }
@@ -148,7 +148,7 @@ namespace kbl {
                 debugf("> bright %s\n", args[0]);
                 setMasterBrightness(atoi(args[0]));
             } else {
-                debugf("? usage: bright <level>\n");
+                debugf("? usage: bright <1-%d>\n", lights::MASTER_BRIGHTNESS_STEPS);
             }
         }
 

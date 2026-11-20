@@ -32,7 +32,7 @@ namespace kbl {
         static const uint32_t FRAME_MS = 10;      // ~100 fps; fade speed depends on this
         static const uint8_t FADE_PER_FRAME = 40; // out of 255, applied to released keys
         static const uint8_t BASE_HUE = HUE_AQUA;
-        static const uint8_t MASTER_BRIGHTNESS_STEPS = 16; // lowest step keeps the softest notes visible
+        static const uint8_t MASTER_BRIGHTNESS_STEPS = 48; // encoder detents from dimmest to full brightness
         static const uint32_t MODE_PREVIEW_MS = 500;
         static const uint32_t BRIGHTNESS_BAR_MS = 1000;
     }

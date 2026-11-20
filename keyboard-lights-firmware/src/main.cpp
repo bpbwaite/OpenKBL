@@ -44,6 +44,10 @@ uint32_t modeSelectKeyDownMs = 0;
 LightMode lightMode = kbl::lights::DEFAULT_LIGHT_MODE;
 uint8_t masterBrightness = kbl::lights::MASTER_BRIGHTNESS_STEPS;
 uint8_t masterScale = 255; // FastLED global brightness for masterBrightness, before power limiting
+
+// Lowest global brightness at which a full-value channel still reaches the strip as
+// MIN_PEAK; any dimmer and the floor can't be met. FastLED sends (255 * (scale + 1)) >> 8.
+static const uint8_t MIN_MASTER_SCALE = (kbl::leds::MIN_PEAK * 256 + 254) / 255 - 1;
 uint32_t powerBudgetMW = kbl::leds::PSU_MAX_MA * kbl::leds::PSU_VOLTAGE;
 
 // While a preview runs it takes over every LED; key state keeps updating underneath.
@@ -171,10 +175,15 @@ void setLightMode(LightMode mode)
 
 void showBrightnessBar()
 {
-    uint8_t litLEDs = masterBrightness * kbl::leds::NUM_LEDS / kbl::lights::MASTER_BRIGHTNESS_STEPS;
+    // Bar length in 1/256ths of an LED, so every detent moves it the same distance even though
+    // a step is a fraction of an LED. The LED at the tip is lit in proportion to how much of it
+    // the bar covers (the brightness floor keeps it visible).
+    uint32_t length = (uint32_t)masterBrightness * kbl::leds::NUM_LEDS * 256 / kbl::lights::MASTER_BRIGHTNESS_STEPS;
     for (uint8_t i = 0; i < kbl::leds::NUM_LEDS; i++)
     {
-        previewLEDs[i] = i < litLEDs ? CRGB(CHSV(kbl::lights::BASE_HUE, 255, 255)) : CRGB(CRGB::Black);
+        uint32_t start = (uint32_t)i * 256;
+        uint8_t covered = length >= start + 255 ? 255 : length > start ? length - start : 0;
+        previewLEDs[i] = covered ? CRGB(CHSV(kbl::lights::BASE_HUE, 255, covered)) : CRGB(CRGB::Black);
     }
     startPreview(kbl::lights::BRIGHTNESS_BAR_MS);
 }
@@ -182,8 +191,9 @@ void showBrightnessBar()
 void setMasterBrightness(int level)
 {
     masterBrightness = constrain(level, 1, kbl::lights::MASTER_BRIGHTNESS_STEPS);
-    masterScale = masterBrightness * 255 / kbl::lights::MASTER_BRIGHTNESS_STEPS;
-    debugf("Master brightness: %d\n", masterBrightness);
+    // evenly spaced from MIN_MASTER_SCALE (level 1) to 255 (top level)
+    masterScale = MIN_MASTER_SCALE + (255 - MIN_MASTER_SCALE) * (masterBrightness - 1) / (kbl::lights::MASTER_BRIGHTNESS_STEPS - 1);
+    debugf("Master brightness: %d/%d (scale %d)\n", masterBrightness, kbl::lights::MASTER_BRIGHTNESS_STEPS, masterScale);
     showBrightnessBar();
 }
 
