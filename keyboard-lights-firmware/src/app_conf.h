@@ -3,8 +3,7 @@
 #include <Arduino.h>
 #include <FastLED.h>
 
-#include "light_modes.h"
-#include "chord_modes.h"
+#include "settings.h"
 
 // All tunable behaviour lives here. Values fixed by the PCB or the piano are in hardware.h.
 
@@ -28,18 +27,34 @@ namespace kbl {
 
     // ---- lights ----
     namespace lights {
-        static const LightMode DEFAULT_LIGHT_MODE = LightMode::PitchHue;
+        static const Settings DEFAULT_SETTINGS = {
+            LightMode::PressedKey,
+            Color::PitchHue,
+            Brightness::Velocity,
+            PedalFade::Off,
+        };
+        // Pedal Fade: a Sustained Key dims at a steady rate (equal halvings per second, which looks
+        // even to the eye) down to the brightness floor at the current Master Brightness, then goes
+        // dark. A full-brightness key takes SUSTAIN_FADE_MS; a softer key starts dimmer, so under
+        // Brightness::Velocity it goes dark sooner.
+        static const uint32_t SUSTAIN_FADE_MS = 10 * 1000;
+        // Every Sustained Key stays lit at least this long, even one that starts at the floor
+        // (a soft key, or any key at low Master Brightness), so the pedal still visibly holds it.
+        static const uint32_t SUSTAIN_FADE_MIN_MS = 1500;
         static const uint32_t FRAME_MS = 10;      // ~100 fps; fade speed depends on this
         static const uint8_t FADE_PER_FRAME = 40; // out of 255, applied to released keys
+        // Once a fading LED drops below the brightness floor it fades this much more per frame
+        // (out of 255), with dithering off, instead of cutting straight to black. The tail is
+        // short enough that the flicker below the floor isn't seen.
+        static const uint8_t BELOW_FLOOR_FADE_PER_FRAME = 96;
         static const uint8_t BASE_HUE = HUE_AQUA;
         static const uint8_t MASTER_BRIGHTNESS_STEPS = 48; // encoder detents from dimmest to full brightness
-        static const uint32_t MODE_PREVIEW_MS = 500;
+        static const uint32_t PREVIEW_MS = 500;
         static const uint32_t BRIGHTNESS_BAR_MS = 1000;
     }
 
     // ---- key colors ----
-    // Colors for LightMode::KeyColors and LightMode::AllOctaves: one 0xRRGGBB hex code per
-    // PitchClass, used in every octave. Brightness still follows velocity.
+    // Colors for Color::KeyColors: one 0xRRGGBB hex code per PitchClass, used in every octave.
     namespace keycolors {
         // TODO: pick new colors for D# / Eb and G# / Ab
         static const uint32_t PITCH_CLASS_COLORS[12] = {
@@ -58,23 +73,23 @@ namespace kbl {
         };
     }
 
-    // ---- Mode Select ----
-    // Press MODE_SELECT_KEY on its own, hold it for at least MODE_SELECT_HOLD_MS, then play
-    // one of the chords below. Chords are octave-independent: only the set of pitch classes
-    // matters, so any voicing or inversion works. The chord must match exactly (no extra keys
-    // held, other than MODE_SELECT_KEY itself). Chords avoid natural A, which is likely to be
-    // played over an A0 bass note.
-    namespace chords {
-        static const uint8_t MODE_SELECT_KEY = 0; // key index, 0 = A0
-        static const uint32_t MODE_SELECT_HOLD_MS = 100;
+    // ---- Settings Menu ----
+    // Opened and closed with the encoder switch. Which Settings it shows, and in what order, is
+    // the GROUPS table in settings_menu.cpp.
+    namespace menu {
+        static const uint8_t FIRST_KEY = 0;           // key index of the first Option, 0 = A0 (below the encoder); must be a white key
+        static const uint8_t GAP_WHITE_KEYS = 1;      // unlit white Keys between Settings; Options only use white Keys
+        static const uint32_t TIMEOUT_MS = 30 * 1000; // closes by itself after this long without a key press
+        static const uint8_t UNSELECTED_SCALE = 40;   // out of 255: brightness of unselected Options
+        // Lowest FastLED global brightness (out of 255) the menu is drawn at, whatever the Master
+        // Brightness, so selected and unselected Options stay distinguishable above the brightness floor.
+        static const uint8_t MIN_GLOBAL_BRIGHTNESS = 96;
 
-        static const ChordMode CHORD_MODES[] = {
-            { chord({C, E, G}), LightMode::VelocityBrightness }, // C major
-            { chord({F, Ab, C}), LightMode::FullBrightness },    // F minor
-            { chord({G, B, D}), LightMode::PitchHue },           // G major
-            { chord({Ab, C, Eb}), LightMode::KeyColors },        // Ab major
-            { chord({E, G, B}), LightMode::AllOctaves },         // E minor
-        };
+        // Swatch animation timing
+        static const uint32_t SWATCH_PERIOD_MS = 1500;  // one cycle of the strike and ramp animations
+        static const uint32_t RAINBOW_PERIOD_MS = 4000; // one trip around the hue wheel (PitchHue, Demo)
+        static const uint32_t KEY_COLOR_STEP_MS = 400;  // how long KeyColors shows each PitchClass color
+        static const uint32_t DEMO_TWINKLE_MS = 120;    // how often the Demo key's twinkle changes
     }
 
     // ---- Demo Mode ----

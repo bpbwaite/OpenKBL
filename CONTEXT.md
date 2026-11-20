@@ -36,20 +36,39 @@ The light assigned to one Key. An LED can be lit without its Key being pressed.
 **Fading**:
 An LED dimming to off after nothing asks it to stay lit. Applies to LEDs only, never to Keys.
 
+**Setting**:
+One independent choice that shapes how LEDs respond to Sounding Keys, such as Color or Brightness. It always holds exactly one value.
+_Avoid_: Mode (for anything other than Light Mode), category
+
 **Light Mode**:
-The rule that decides how LEDs respond to Sounding Keys.
+The Setting that decides which LEDs light for the Sounding Keys, such as only the pressed Key or every octave of its PitchClass.
 _Avoid_: Color mode
+
+**Pedal Fade**:
+A Setting under which Sustained Keys dim out and go dark a fixed time after release, instead of staying fully lit while the pedal is down.
 
 ### Control
 
 **Master Brightness**:
 The overall brightness of all LEDs, set with the rotary encoder. It can never reach fully off.
 
-**Mode Preview**:
-A brief display on all LEDs that represents the Light Mode just selected.
+**Settings Menu**:
+A state, opened with the encoder switch, in which white Keys at the bass end choose Settings instead of lighting up.
+_Avoid_: Mode Select
 
-**Mode Select**:
-The deliberate act of choosing a Light Mode by holding A0 first and then playing a chord.
+**Option**:
+One value of a Setting, assigned to one white Key in the Settings Menu. An on/off Setting has two Options, Off and On.
+_Avoid_: Toggle
+
+**Menu Action**:
+A Key in the Settings Menu that does something once instead of choosing a value, such as starting Demo Mode.
+
+**Swatch**:
+The small animation an Option's LED shows in the Settings Menu, bright when selected and dim when not.
+
+**Preview**:
+A brief display on all LEDs that shows how the current Settings look.
+_Avoid_: Mode Preview
 
 **Demo Mode**:
-A state in which LEDs light at random under the current Light Mode with no Keys pressed, until someone plays. It is not a Light Mode.
+A state in which LEDs light at random under the current Settings with no Keys pressed, until someone plays. It is not a Light Mode.

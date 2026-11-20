@@ -4,9 +4,10 @@
 #include "app_conf.h"
 #include "hardware.h"
 #include "midi_util.h"
-#include "light_modes.h"
-#include "chord_modes.h"
 #include "key_state.h"
+#include "render.h"
+#include "settings.h"
+#include "settings_menu.h"
 #include "demo_mode.h"
 #include "serial_commands.h"
 #include "rotary_encoder.h"
@@ -35,13 +36,10 @@ void buildSagCompensation()
     debugf("Sag compensation: LED 0 = %d, LED %d = %d\n",
            sagCompensation[0], (int)kbl::leds::NUM_LEDS - 1, sagCompensation[kbl::leds::NUM_LEDS - 1]);
 }
+
 bool sustainPedalDown = false;
 
-// armed when MODE_SELECT_KEY goes down with no other key held
-bool modeSelectArmed = false;
-uint32_t modeSelectKeyDownMs = 0;
-
-LightMode lightMode = kbl::lights::DEFAULT_LIGHT_MODE;
+kbl::Settings settings = kbl::lights::DEFAULT_SETTINGS;
 uint8_t masterBrightness = kbl::lights::MASTER_BRIGHTNESS_STEPS;
 uint8_t masterScale = 255; // FastLED global brightness for masterBrightness, before power limiting
 
@@ -49,79 +47,28 @@ uint8_t masterScale = 255; // FastLED global brightness for masterBrightness, be
 // MIN_PEAK; any dimmer and the floor can't be met. FastLED sends (255 * (scale + 1)) >> 8.
 static const uint8_t MIN_MASTER_SCALE = (kbl::leds::MIN_PEAK * 256 + 254) / 255 - 1;
 uint32_t powerBudgetMW = kbl::leds::PSU_MAX_MA * kbl::leds::PSU_VOLTAGE;
+uint8_t lastScale = 255; // global brightness the last frame went out with
+
+// Smallest buffer value that still reaches the strip as at least MIN_PEAK under global
+// brightness `scale`. FastLED sends (value * (scale + 1)) >> 8; dithering only adds to that.
+uint8_t floorBeforeScale(uint8_t scale)
+{
+    uint16_t value = ((uint16_t)kbl::leds::MIN_PEAK * 256 + scale) / (scale + 1); // rounded up
+    return min<uint16_t>(value, 255);
+}
+
+// The floor for Pedal Fade to aim at, from the last frame's global brightness (this frame's
+// isn't known until its LEDs are rendered). Sag compensation dims LEDs nearer the supply by
+// up to ~2% more; raiseToFloor() holds those at the floor for the last moments.
+uint8_t currentFloor()
+{
+    return floorBeforeScale(lastScale);
+}
 
 // While a preview runs it takes over every LED; key state keeps updating underneath.
 CRGB previewLEDs[kbl::leds::NUM_LEDS];
 uint32_t previewStartMs = 0;
 uint32_t previewDurationMs = 0; // 0 = no preview running
-
-uint8_t velocityBrightness(uint8_t velocity)
-{
-    return map(velocity, 1, 127, kbl::leds::MIN_PEAK, 255);
-}
-
-// PitchClass of a key, 0 = C ... 11 = B
-uint8_t keyPitchClass(uint8_t keyIndex)
-{
-    return (keyIndex + kbl::keys::MIDI_NOTE_LOWEST) % 12;
-}
-
-// Per-key modes: color of a Sounding key, from its own state only.
-CRGB keyColor(uint8_t keyIndex, const KeyState &key)
-{
-    switch (lightMode)
-    {
-    case LightMode::FullBrightness:
-        return CHSV(kbl::lights::BASE_HUE, 255, 255);
-    case LightMode::PitchHue:
-        return CHSV(keyIndex * 255 / (kbl::leds::NUM_LEDS - 1), 255, velocityBrightness(key.velocity));
-    case LightMode::KeyColors:
-        return CRGB(kbl::keycolors::PITCH_CLASS_COLORS[keyPitchClass(keyIndex)]).nscale8(velocityBrightness(key.velocity));
-    case LightMode::VelocityBrightness:
-    default:
-        return CHSV(kbl::lights::BASE_HUE, 255, velocityBrightness(key.velocity));
-    }
-}
-
-// Each Sounding PitchClass lights all of its keys, at the hardest-pressed one's brightness.
-void renderAllOctaves(CRGB *target, const KeyState *keys)
-{
-    uint8_t maxVelocity[12] = {};
-    for (uint8_t i = 0; i < kbl::leds::NUM_LEDS; i++)
-    {
-        if (isSounding(keys[i]))
-        {
-            uint8_t &v = maxVelocity[keyPitchClass(i)];
-            v = max(v, keys[i].velocity);
-        }
-    }
-    for (uint8_t i = 0; i < kbl::leds::NUM_LEDS; i++)
-    {
-        uint8_t pc = keyPitchClass(i);
-        target[i] = maxVelocity[pc]
-                        ? CRGB(kbl::keycolors::PITCH_CLASS_COLORS[pc]).nscale8(velocityBrightness(maxVelocity[pc]))
-                        : CRGB::Black;
-    }
-}
-
-// Fills target with what each LED should show, from the state of all keys.
-// Black = not lit (the LED fades out). Modes that light keys other than the pressed one
-// get their own render function here; everything else is a per-key mode via keyColor().
-void computeTargets(CRGB *target, const KeyState *keys)
-{
-    switch (lightMode)
-    {
-    case LightMode::AllOctaves:
-        renderAllOctaves(target, keys);
-        break;
-    default:
-        for (uint8_t i = 0; i < kbl::leds::NUM_LEDS; i++)
-        {
-            target[i] = isSounding(keys[i]) ? keyColor(i, keys[i]) : CRGB::Black;
-        }
-        break;
-    }
-}
 
 // previewLEDs must already be filled
 void startPreview(uint32_t durationMs)
@@ -139,38 +86,25 @@ bool previewRunning()
     return previewDurationMs != 0;
 }
 
-// Renders the current mode from simulated keys, so the preview always matches the mode.
-void showModePreview()
+// Renders the current Settings from simulated keys, so the Preview always matches them.
+void showPreview()
 {
-    KeyState keys[kbl::leds::NUM_LEDS] = {};
-    for (uint8_t i = 0; i < kbl::leds::NUM_LEDS; i++)
-    {
-        keys[i].held = true;
-        keys[i].velocity = 127;
-        switch (lightMode)
-        {
-        case LightMode::VelocityBrightness:
-            keys[i].velocity = map(i, 0, kbl::leds::NUM_LEDS - 1, 1, 127);
-            break;
-        case LightMode::AllOctaves:
-        {
-            using namespace kbl::chords;
-            keys[i].held = chord({C, E, G}) & (1u << keyPitchClass(i));
-            break;
-        }
-        default:
-            break;
-        }
-    }
-    computeTargets(previewLEDs, keys);
-    startPreview(kbl::lights::MODE_PREVIEW_MS);
+    KeyState keys[kbl::leds::NUM_LEDS];
+    kbl::render::previewKeys(keys, settings);
+    kbl::render::computeTargets(previewLEDs, keys, settings, millis(), currentFloor());
+    startPreview(kbl::lights::PREVIEW_MS);
 }
 
-void setLightMode(LightMode mode)
+kbl::Settings &currentSettings()
 {
-    lightMode = mode;
-    debugf("Light mode: %s\n", lightModeName(mode));
-    showModePreview();
+    return settings;
+}
+
+void onSettingsChanged()
+{
+    debugf("Settings: ");
+    kbl::menu::printSettings(settings);
+    showPreview();
 }
 
 void showBrightnessBar()
@@ -203,13 +137,19 @@ void clearKeys()
     {
         key = {};
     }
-    modeSelectArmed = false;
 }
 
 void onDemoModeStart()
 {
     clearKeys();
     sustainPedalDown = false;
+}
+
+void onMenuOpen()
+{
+    clearKeys();
+    kbl::demo::stop();
+    kbl::demo::recordActivity();
 }
 
 // returns -1 for notes outside the 88-key range
@@ -222,33 +162,6 @@ int noteToKeyIndex(byte note)
     return note - kbl::keys::MIDI_NOTE_LOWEST;
 }
 
-// bitmask of held pitch classes (bit 0 = C), ignoring the mode select key
-uint16_t heldChord()
-{
-    uint16_t mask = 0;
-    for (uint8_t i = 0; i < kbl::leds::NUM_LEDS; i++)
-    {
-        if (keyStates[i].held && i != kbl::chords::MODE_SELECT_KEY)
-        {
-            mask |= 1u << keyPitchClass(i);
-        }
-    }
-    return mask;
-}
-
-void checkModeChord()
-{
-    uint16_t held = heldChord();
-    for (const kbl::chords::ChordMode &cm : kbl::chords::CHORD_MODES)
-    {
-        if (cm.chord == held)
-        {
-            setLightMode(cm.mode);
-            return;
-        }
-    }
-}
-
 void handleNoteOn(byte channel, byte note, byte velocity)
 {
     int i = noteToKeyIndex(note);
@@ -259,22 +172,13 @@ void handleNoteOn(byte channel, byte note, byte velocity)
     debugf("Note: %d\n", note);
 #endif
     kbl::demo::recordActivity();
+    if (kbl::menu::isOpen() && kbl::menu::onKeyDown(i))
+        return;
     kbl::demo::stop();
-
-    if (i == kbl::chords::MODE_SELECT_KEY)
-    {
-        modeSelectArmed = heldChord() == 0;
-        modeSelectKeyDownMs = millis();
-    }
 
     keyStates[i].held = true;
     keyStates[i].sustained = false;
     keyStates[i].velocity = velocity;
-
-    if (modeSelectArmed && i != kbl::chords::MODE_SELECT_KEY && millis() - modeSelectKeyDownMs >= kbl::chords::MODE_SELECT_HOLD_MS)
-    {
-        checkModeChord();
-    }
 }
 
 // the MIDI library also routes note-on with velocity 0 here
@@ -286,13 +190,13 @@ void handleNoteOff(byte channel, byte note, byte velocity)
 
     kbl::demo::recordActivity();
 
-    if (i == kbl::chords::MODE_SELECT_KEY)
-    {
-        modeSelectArmed = false;
-    }
-
+    // nothing to release: the key was pressed while the Settings Menu was open, or was
+    // cleared when the menu or Demo Mode started
+    if (!keyStates[i].held)
+        return;
     keyStates[i].held = false;
     keyStates[i].sustained = sustainPedalDown;
+    keyStates[i].releasedMs = millis();
 }
 
 void handleControlChange(byte channel, byte number, byte value)
@@ -330,44 +234,49 @@ void handleRotary()
     }
     if (rotary.presses)
     {
-        kbl::demo::start();
+        kbl::menu::toggle();
     }
 }
 
-// Smallest buffer value that still reaches the strip as at least MIN_PEAK under global
-// brightness `scale`. FastLED sends (value * (scale + 1)) >> 8; dithering only adds to that.
-uint8_t floorBeforeScale(uint8_t scale)
-{
-    uint16_t value = ((uint16_t)kbl::leds::MIN_PEAK * 256 + scale) / (scale + 1); // rounded up
-    return min<uint16_t>(value, 255);
-}
 
-// Keeps every LED out of the flickering range: lit LEDs below the floor are raised to it,
-// keeping their color, and fading LEDs that drop below it go dark.
-void applyBrightnessFloor(const CRGB *target, uint8_t scale)
+// Keeps lit LEDs out of the flickering range: those below the floor are raised to it,
+// keeping their color.
+void raiseToFloor(const CRGB *target, uint8_t scale)
 {
     const uint8_t floorPeak = floorBeforeScale(scale);
     for (uint8_t i = 0; i < kbl::leds::NUM_LEDS; i++)
     {
         CRGB &led = kblLEDs[i];
         uint8_t peak = max(led.r, max(led.g, led.b));
-        if (peak == 0 || peak >= floorPeak)
+        if (!target[i] || peak == 0 || peak >= floorPeak)
             continue;
-        if (target[i])
-        {
-            led = CRGB((led.r * floorPeak + peak / 2) / peak,
-                       (led.g * floorPeak + peak / 2) / peak,
-                       (led.b * floorPeak + peak / 2) / peak);
-        }
-        else
-        {
-            led = CRGB::Black;
-        }
+        led = CRGB((led.r * floorPeak + peak / 2) / peak,
+                   (led.g * floorPeak + peak / 2) / peak,
+                   (led.b * floorPeak + peak / 2) / peak);
     }
 }
 
-// Fills kblLEDs and returns the global brightness to show them with.
-uint8_t renderKeys()
+// Fading LEDs below the floor would flicker, so they fade out quickly (a short tail rather than
+// a cut to black). Returns true if any are in that tail, so the frame goes out undithered.
+bool hurryFadeBelowFloor(const CRGB *target, uint8_t scale)
+{
+    const uint8_t floorPeak = floorBeforeScale(scale);
+    bool any = false;
+    for (uint8_t i = 0; i < kbl::leds::NUM_LEDS; i++)
+    {
+        CRGB &led = kblLEDs[i];
+        uint8_t peak = max(led.r, max(led.g, led.b));
+        if (target[i] || peak == 0 || peak >= floorPeak)
+            continue;
+        led.fadeToBlackBy(kbl::lights::BELOW_FLOOR_FADE_PER_FRAME);
+        any = true;
+    }
+    return any;
+}
+
+// Fills kblLEDs and returns the global brightness to show them with. dither is set false
+// while any LED is fading out below the brightness floor.
+uint8_t renderKeys(bool &dither)
 {
     CRGB frame[kbl::leds::NUM_LEDS];
     const CRGB *target = frame;
@@ -375,9 +284,13 @@ uint8_t renderKeys()
     {
         target = previewLEDs;
     }
+    else if (kbl::menu::isOpen())
+    {
+        kbl::menu::render(frame, millis());
+    }
     else
     {
-        computeTargets(frame, kbl::demo::active() ? kbl::demo::keys() : keyStates);
+        kbl::render::computeTargets(frame, kbl::demo::active() ? kbl::demo::keys() : keyStates, settings, millis(), currentFloor());
     }
 
     for (uint8_t i = 0; i < kbl::leds::NUM_LEDS; i++)
@@ -394,15 +307,18 @@ uint8_t renderKeys()
     }
 
     // Power limiting is done here rather than by FastLED, so the floor can allow for it.
-    uint8_t scale = calculate_max_brightness_for_power_mW(kblLEDs, kbl::leds::NUM_LEDS, masterScale, powerBudgetMW);
-    applyBrightnessFloor(target, scale);
+    uint8_t requested = kbl::menu::isOpen() ? max(masterScale, kbl::menu::MIN_GLOBAL_BRIGHTNESS) : masterScale;
+    uint8_t scale = calculate_max_brightness_for_power_mW(kblLEDs, kbl::leds::NUM_LEDS, requested, powerBudgetMW);
+    raiseToFloor(target, scale);
     // raising dim LEDs adds a little power; settle once more
     uint8_t settled = calculate_max_brightness_for_power_mW(kblLEDs, kbl::leds::NUM_LEDS, scale, powerBudgetMW);
     if (settled < scale)
     {
         scale = settled;
-        applyBrightnessFloor(target, scale);
+        raiseToFloor(target, scale);
     }
+    dither = !hurryFadeBelowFloor(target, scale);
+    lastScale = scale;
     return scale;
 }
 
@@ -439,8 +355,11 @@ void setup()
     }
 
     buildSagCompensation();
+    kbl::menu::begin();
 
-    showModePreview();
+    debugf("Settings: ");
+    kbl::menu::printSettings(settings);
+    showPreview();
 
     debugf("LEDS Initialized");
 
@@ -465,10 +384,14 @@ void loop()
     handleRotary();
 
     kbl::demo::poll();
+    kbl::menu::poll();
 
     EVERY_N_MILLISECONDS(kbl::lights::FRAME_MS)
     {
-        FastLED.show(renderKeys()); // dithering stays on (FastLED's default)
+        bool dither;
+        uint8_t scale = renderKeys(dither);
+        FastLED.setDither(dither ? BINARY_DITHER : DISABLE_DITHER);
+        FastLED.show(scale);
     }
 
     EVERY_N_SECONDS(kbl::debug::FPS_REPORT_S)
