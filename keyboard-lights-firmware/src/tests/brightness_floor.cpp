@@ -95,14 +95,6 @@ namespace {
     }
 }
 
-void onRotaryTurn(int steps) {}
-
-void onRotaryPress()
-{
-    dithering = !dithering;
-    applyDithering();
-}
-
 void setup()
 {
     debugStart();
@@ -123,7 +115,11 @@ void setup()
 
 void loop()
 {
-    rotaryPoll();
+    if (rotaryPoll().presses % 2) // each press toggles
+    {
+        dithering = !dithering;
+        applyDithering();
+    }
 
     EVERY_N_MILLISECONDS(CYCLE_MS)
     {

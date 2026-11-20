@@ -321,14 +321,17 @@ void handleControlChange(byte channel, byte number, byte value)
     }
 }
 
-void onRotaryTurn(int steps)
+void handleRotary()
 {
-    setMasterBrightness(masterBrightness + steps);
-}
-
-void onRotaryPress()
-{
-    kbl::demo::start();
+    RotaryEvents rotary = rotaryPoll();
+    if (rotary.steps)
+    {
+        setMasterBrightness(masterBrightness + rotary.steps);
+    }
+    if (rotary.presses)
+    {
+        kbl::demo::start();
+    }
 }
 
 // Smallest buffer value that still reaches the strip as at least MIN_PEAK under global
@@ -459,7 +462,7 @@ void loop()
     {
     }
     serialCommandsPoll(); // no-op unless KBL_USB_MIDI_DEBUG
-    rotaryPoll();
+    handleRotary();
 
     kbl::demo::poll();
 
