@@ -16,3 +16,13 @@ Set `-DPCB_REVISION` in `platformio.ini` to match the board; revision 0 needs th
 
 For testing without a piano, build with `-DKBL_USB_MIDI_DEBUG` and type commands like `on C4 E4 G4` into the USB serial monitor (`help` lists them).
 
+## To do: better hand guessing
+
+Ideas for Hands, roughly from cheapest to most ambitious:
+
+- **Hold the guess briefly (~25 ms).** A chord played with rubato or imprecise timing arrives as a quick spread of notes, and the first note is often guessed before its chord partners show where the hand is. Waiting a short moment before coloring a Key lets the whole chord be judged together. The delay is short enough not to look laggy. This is the first use of timing, so check it doesn't break fast passages.
+- **Measure reach in key widths, not semitones.** A hand's stretch is physical: an eleventh from E is wider than one from C. Counting white-key widths would make the reach limits more accurate.
+- **Weight a hand's latest Key in its anchor.** A hand is remembered as the whole range of its last chord, so after a wide chord it claims everything in between at no cost.
+- **Tune the costs on real music.** Record MIDI files with left and right hands on separate tracks, score them with the labelled-passage checker in `test/test_hands/`, and tune `kbl::hands::CONFIG` against them.
+- **Hands with AllOctaves.** An LED lit by both hands' Keys currently shows whichever Key sets its brightness.
+- **Camera hand tracking (outlandish).** A camera over the keyboard running a hand-landmark model would know which hand, even which finger, is on each Key. It would need a computer or a far bigger board than the ESP32-C3, calibration of the camera to the Keys, and a way to send its answers to the strip. It could also label recordings to tune the cheaper rules above.
