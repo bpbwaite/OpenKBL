@@ -16,6 +16,7 @@ namespace kbl {
                 uint32_t fadeMs;  // how long it has been fading
                 hands::Hand hand; // for Color::Hands
                 bool corrected;   // its hand was just corrected (KBL_HAND_DEBUG)
+                bool blank;       // held dark by Blank On Press; overrides velocity
             };
 
             // A Key's Lit, as if it were the only Key lighting its LED.
@@ -28,7 +29,8 @@ namespace kbl {
 #ifdef KBL_HAND_DEBUG
                 corrected = key.correctedMs && nowMs - key.correctedMs < hands::CORRECTED_FLASH_MS;
 #endif
-                return {key.velocity, fading, fading ? nowMs - key.releasedMs : 0, key.hand, corrected};
+                bool blank = s.blankOnPress == BlankOnPress::On && key.blanking && nowMs - key.pressedMs < lights::BLANK_ON_PRESS_MS;
+                return {key.velocity, fading, fading ? nowMs - key.releasedMs : 0, key.hand, corrected, blank};
             }
 
             // ---- Light Mode: which LEDs light, and how hard ----
@@ -61,6 +63,7 @@ namespace kbl {
                     c.velocity = max(c.velocity, k.velocity);
                     c.fading = c.fading && k.fading;
                     c.fadeMs = c.fading ? min(c.fadeMs, k.fadeMs) : 0;
+                    c.blank = c.blank || k.blank; // a pressed Key blanks its whole PitchClass
                 }
                 for (uint8_t i = 0; i < leds::NUM_LEDS; i++)
                 {
@@ -138,7 +141,7 @@ namespace kbl {
             }
         }
 
-        void computeTargets(CRGB *target, const KeyState *keys, const Settings &s, uint32_t nowMs, uint8_t floorPeak)
+        void computeTargets(CRGB *target, bool *blank, const KeyState *keys, const Settings &s, uint32_t nowMs, uint8_t floorPeak)
         {
             Lit lit[leds::NUM_LEDS];
             switch (s.lightMode)
@@ -156,7 +159,8 @@ namespace kbl {
             // Brightness and Color (hue-based colors would otherwise add FastLED's dimming curve).
             for (uint8_t i = 0; i < leds::NUM_LEDS; i++)
             {
-                if (!lit[i].velocity)
+                blank[i] = lit[i].blank;
+                if (!lit[i].velocity || lit[i].blank)
                 {
                     target[i] = CRGB::Black;
                     continue;

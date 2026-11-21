@@ -88,6 +88,20 @@ namespace kbl {
                     return colorOf(s.color, nowMs).nscale8(scale8(left, left));
                 }
 
+                // BlankOnPress Off: the same key struck again while lit, which shows as one long light
+                CRGB restrikeLit(const Settings &s, uint32_t nowMs)
+                {
+                    return colorOf(s.color, nowMs);
+                }
+
+                // BlankOnPress On: the same key struck again, with a dark gap before each strike
+                CRGB restrikeBlank(const Settings &s, uint32_t nowMs)
+                {
+                    if (nowMs % (SWATCH_PERIOD_MS / 2) < BLANK_SWATCH_GAP_MS)
+                        return CRGB::Black;
+                    return colorOf(s.color, nowMs);
+                }
+
                 // random twinkle in shifting colors
                 CRGB demo(const Settings &, uint32_t nowMs)
                 {
@@ -131,6 +145,12 @@ namespace kbl {
                 {"On", swatch::pedalFade},
             };
             static_assert(count(PEDAL_FADE_OPTIONS) == (size_t)PedalFade::COUNT, "one Option per PedalFade");
+
+            const Option BLANK_ON_PRESS_OPTIONS[] = {
+                {"Off", swatch::restrikeLit},
+                {"On", swatch::restrikeBlank},
+            };
+            static_assert(count(BLANK_ON_PRESS_OPTIONS) == (size_t)BlankOnPress::COUNT, "one Option per BlankOnPress");
         }
 
         // Settings Menu layout order, from FIRST_KEY upward. Add new groups at the end so the
@@ -145,6 +165,8 @@ namespace kbl {
              [](Settings &s) -> uint8_t & { return reinterpret_cast<uint8_t &>(s.brightness); }, nullptr},
             {"PedalFade", GroupKind::Radio, PEDAL_FADE_OPTIONS, count(PEDAL_FADE_OPTIONS),
              [](Settings &s) -> uint8_t & { return reinterpret_cast<uint8_t &>(s.pedalFade); }, nullptr},
+            {"BlankOnPress", GroupKind::Radio, BLANK_ON_PRESS_OPTIONS, count(BLANK_ON_PRESS_OPTIONS),
+             [](Settings &s) -> uint8_t & { return reinterpret_cast<uint8_t &>(s.blankOnPress); }, nullptr},
         };
         const size_t GROUP_COUNT = sizeof(GROUPS) / sizeof(GROUPS[0]);
 

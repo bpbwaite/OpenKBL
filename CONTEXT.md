@@ -53,6 +53,9 @@ _Avoid_: Color mode
 **Pedal Fade**:
 A Setting under which Sustained Keys dim out and go dark a fixed time after release, instead of staying fully lit while the pedal is down.
 
+**Blank On Press**:
+A Setting under which pressing a Key whose LED is already lit (it is Sounding, or still Fading) turns that LED off for a brief holdoff before it lights again, so every press shows.
+
 ### Control
 
 **Master Brightness**:

@@ -94,7 +94,8 @@ void showPreview()
 {
     KeyState keys[kbl::leds::NUM_LEDS];
     kbl::render::previewKeys(keys, settings);
-    kbl::render::computeTargets(previewLEDs, keys, settings, millis(), currentFloor());
+    bool blank[kbl::leds::NUM_LEDS];
+    kbl::render::computeTargets(previewLEDs, blank, keys, settings, millis(), currentFloor());
     startPreview(kbl::lights::PREVIEW_MS);
 }
 
@@ -180,6 +181,9 @@ void handleNoteOn(byte channel, byte note, byte velocity)
         return;
     kbl::demo::stop();
 
+    // Blank On Press: a Key whose LED is already lit goes dark briefly, so the press shows
+    keyStates[i].blanking = isSounding(keyStates[i]) || kblLEDs[i];
+    keyStates[i].pressedMs = millis();
     keyStates[i].held = true;
     keyStates[i].sustained = false;
     keyStates[i].velocity = velocity;
@@ -296,6 +300,7 @@ bool hurryFadeBelowFloor(const CRGB *target, uint8_t scale)
 uint8_t renderKeys(bool &dither)
 {
     CRGB frame[kbl::leds::NUM_LEDS];
+    bool blank[kbl::leds::NUM_LEDS] = {};
     const CRGB *target = frame;
     if (previewRunning())
     {
@@ -307,7 +312,7 @@ uint8_t renderKeys(bool &dither)
     }
     else
     {
-        kbl::render::computeTargets(frame, kbl::demo::active() ? kbl::demo::keys() : keyStates, settings, millis(), currentFloor());
+        kbl::render::computeTargets(frame, blank, kbl::demo::active() ? kbl::demo::keys() : keyStates, settings, millis(), currentFloor());
     }
 
     for (uint8_t i = 0; i < kbl::leds::NUM_LEDS; i++)
@@ -316,6 +321,10 @@ uint8_t renderKeys(bool &dither)
         {
             kblLEDs[i] = target[i];
             kblLEDs[i].nscale8(sagCompensation[i]);
+        }
+        else if (blank[i])
+        {
+            kblLEDs[i] = CRGB::Black; // Blank On Press: straight off, not a fade
         }
         else
         {

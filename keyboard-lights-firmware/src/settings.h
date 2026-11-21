@@ -42,10 +42,17 @@ namespace kbl {
         COUNT
     };
 
+    enum class BlankOnPress : uint8_t {
+        Off, // pressing a Key whose LED is already lit leaves it lit
+        On,  // ...turns that LED off for kbl::lights::BLANK_ON_PRESS_MS first, so every press shows
+        COUNT
+    };
+
     struct Settings {
         LightMode lightMode;
         Color color;
         Brightness brightness;
         PedalFade pedalFade;
+        BlankOnPress blankOnPress;
     };
 }

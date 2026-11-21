@@ -33,6 +33,7 @@ namespace kbl {
             Color::PitchHue,
             Brightness::Velocity,
             PedalFade::Off,
+            BlankOnPress::Off,
         };
         // Pedal Fade: a Sustained Key dims at a steady rate (equal halvings per second, which looks
         // even to the eye) down to the brightness floor at the current Master Brightness, then goes
@@ -42,6 +43,8 @@ namespace kbl {
         // Every Sustained Key stays lit at least this long, even one that starts at the floor
         // (a soft key, or any key at low Master Brightness), so the pedal still visibly holds it.
         static const uint32_t SUSTAIN_FADE_MIN_MS = 1500;
+        // Blank On Press: how long a pressed Key's already-lit LED is held off before it lights again
+        static const uint32_t BLANK_ON_PRESS_MS = 50;
         static const uint32_t FRAME_MS = 10;      // ~100 fps; fade speed depends on this
         static const uint8_t FADE_PER_FRAME = 40; // out of 255, applied to released keys
         // Once a fading LED drops below the brightness floor it fades this much more per frame
@@ -132,6 +135,8 @@ namespace kbl {
         static const uint32_t KEY_COLOR_STEP_MS = 400;  // how long KeyColors shows each PitchClass color
         static const uint32_t HANDS_STEP_MS = 600;      // how long Hands shows each hand's color
         static const uint32_t DEMO_TWINKLE_MS = 120;    // how often the Demo key's twinkle changes
+        // Blank On Press swatch: the dark gap between strikes, longer than the real one so it shows
+        static const uint32_t BLANK_SWATCH_GAP_MS = 150;
     }
 
     // ---- Demo Mode ----
