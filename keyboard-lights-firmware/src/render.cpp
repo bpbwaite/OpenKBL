@@ -17,6 +17,8 @@ namespace kbl {
                 hands::Hand hand; // for Color::Hands
                 bool corrected;   // its hand was just corrected (KBL_HAND_DEBUG)
                 bool blank;       // held dark by Blank On Press; overrides velocity
+                uint8_t level;    // brightness out of 255 on top of velocity, for Harmonics' overtones
+                uint8_t accent;   // how far to blend toward white, out of 255, for Brightness::Accent
             };
 
             // A Key's Lit, as if it were the only Key lighting its LED.
@@ -30,7 +32,37 @@ namespace kbl {
                 corrected = key.correctedMs && nowMs - key.correctedMs < hands::CORRECTED_FLASH_MS;
 #endif
                 bool blank = s.blankOnPress == BlankOnPress::On && key.blanking && nowMs - key.pressedMs < lights::BLANK_ON_PRESS_MS;
-                return {key.velocity, fading, fading ? nowMs - key.releasedMs : 0, key.hand, corrected, blank};
+                // the white starts once any Blank On Press gap is over
+                uint32_t litMs = nowMs - key.pressedMs - (key.blanking && s.blankOnPress == BlankOnPress::On ? lights::BLANK_ON_PRESS_MS : 0);
+                uint8_t accent = 0;
+                if (s.brightness == Brightness::Accent && key.accented && !blank && litMs < accent::FLASH_MS)
+                    accent = 255 - litMs * 255 / accent::FLASH_MS;
+                return {key.velocity, fading, fading ? nowMs - key.releasedMs : 0, key.hand, corrected, blank, 255, accent};
+            }
+
+            // Adds k to the LED c, when more than one Key lights it. It takes the harder velocity
+            // (and that Key's hand), adds up the levels, and fades only if both are fading, from
+            // the more recent release.
+            void merge(Lit &c, const Lit &k)
+            {
+                if (!k.velocity)
+                    return;
+                if (!c.velocity)
+                {
+                    c = k;
+                    return;
+                }
+                if (k.velocity > c.velocity)
+                {
+                    c.velocity = k.velocity;
+                    c.hand = k.hand;
+                    c.corrected = k.corrected;
+                }
+                c.fading = c.fading && k.fading;
+                c.fadeMs = c.fading ? min(c.fadeMs, k.fadeMs) : 0;
+                c.blank = c.blank || k.blank; // a pressed Key blanks every LED it lights
+                c.level = min(255, c.level + k.level);
+                c.accent = max(c.accent, k.accent);
             }
 
             // ---- Light Mode: which LEDs light, and how hard ----
@@ -51,23 +83,37 @@ namespace kbl {
                 Lit byClass[12] = {};
                 for (uint8_t i = 0; i < leds::NUM_LEDS; i++)
                 {
-                    Lit k = keyLit(keys[i], s, nowMs);
-                    if (!k.velocity)
-                        continue;
-                    Lit &c = byClass[keyPitchClass(i)];
-                    if (!c.velocity)
-                    {
-                        c = k;
-                        continue;
-                    }
-                    c.velocity = max(c.velocity, k.velocity);
-                    c.fading = c.fading && k.fading;
-                    c.fadeMs = c.fading ? min(c.fadeMs, k.fadeMs) : 0;
-                    c.blank = c.blank || k.blank; // a pressed Key blanks its whole PitchClass
+                    merge(byClass[keyPitchClass(i)], keyLit(keys[i], s, nowMs));
                 }
                 for (uint8_t i = 0; i < leds::NUM_LEDS; i++)
                 {
                     lit[i] = byClass[keyPitchClass(i)];
+                }
+            }
+
+            // Each Sounding Key lights itself and its overtones (kbl::harmonics::OVERTONES), each
+            // overtone dimmer. Overtones that land on the same LED add up, so Keys that share
+            // overtones (consonant intervals) brighten them.
+            void lightHarmonics(Lit *lit, const KeyState *keys, const Settings &s, uint32_t nowMs)
+            {
+                for (uint8_t i = 0; i < leds::NUM_LEDS; i++)
+                {
+                    lit[i] = {};
+                }
+                for (uint8_t i = 0; i < leds::NUM_LEDS; i++)
+                {
+                    Lit k = keyLit(keys[i], s, nowMs);
+                    if (!k.velocity)
+                        continue;
+                    merge(lit[i], k);
+                    for (const harmonics::Overtone &o : harmonics::OVERTONES)
+                    {
+                        if (i + o.semitones >= leds::NUM_LEDS)
+                            break;
+                        Lit overtone = k;
+                        overtone.level = o.level;
+                        merge(lit[i + o.semitones], overtone);
+                    }
                 }
             }
 
@@ -115,6 +161,7 @@ namespace kbl {
                 case Brightness::Full:
                     return 255;
                 case Brightness::Velocity:
+                case Brightness::Accent: // Velocity, plus the white flash in keyLit()
                 default:
                     return map(velocity, 1, 127, leds::MIN_PEAK, 255);
                 }
@@ -136,7 +183,7 @@ namespace kbl {
                     return CRGB(keycolors::PITCH_CLASS_COLORS[keyPitchClass(ledIndex)]).nscale8(brightness);
                 case Color::BaseHue:
                 default:
-                    return CHSV(lights::BASE_HUE, 255, brightness);
+                    return CHSV(s.baseHue, 255, brightness);
                 }
             }
         }
@@ -148,6 +195,9 @@ namespace kbl {
             {
             case LightMode::AllOctaves:
                 lightAllOctaves(lit, keys, s, nowMs);
+                break;
+            case LightMode::Harmonics:
+                lightHarmonics(lit, keys, s, nowMs);
                 break;
             case LightMode::PressedKey:
             default:
@@ -165,7 +215,12 @@ namespace kbl {
                     target[i] = CRGB::Black;
                     continue;
                 }
-                target[i] = colorOf(i, brightnessOf(lit[i].velocity, s), lit[i], s);
+                uint8_t brightness = brightnessOf(lit[i].velocity, s);
+                if (lit[i].level < 255)
+                    brightness = scale8(brightness, lit[i].level);
+                target[i] = colorOf(i, brightness, lit[i], s);
+                if (lit[i].accent)
+                    nblend(target[i], CRGB(brightness, brightness, brightness), lit[i].accent);
                 if (lit[i].fading)
                 {
                     CRGB full = colorOf(i, 255, lit[i], s);
@@ -190,6 +245,17 @@ namespace kbl {
                 // one C major chord at middle C; the Light Mode spreads it across the keyboard
                 const uint8_t C4 = 60 - kbl::keys::MIDI_NOTE_LOWEST;
                 for (uint8_t i : {C4, uint8_t(C4 + 4), uint8_t(C4 + 7)})
+                {
+                    keys[i].held = true;
+                    keys[i].velocity = 127;
+                }
+                break;
+            }
+            case LightMode::Harmonics:
+            {
+                // a C major chord at C3, so its overtones (up to C5) overlap and add up
+                const uint8_t C3 = 48 - kbl::keys::MIDI_NOTE_LOWEST;
+                for (uint8_t i : {C3, uint8_t(C3 + 4), uint8_t(C3 + 7)})
                 {
                     keys[i].held = true;
                     keys[i].velocity = 127;

@@ -27,7 +27,7 @@ namespace kbl {
 
                 // A Color as one animated LED. The Color Options show it directly; the others
                 // animate in the current Color, so the menu previews the whole look.
-                CRGB colorOf(Color color, uint32_t nowMs)
+                CRGB colorOf(const Settings &s, Color color, uint32_t nowMs)
                 {
                     switch (color)
                     {
@@ -39,27 +39,27 @@ namespace kbl {
                         return CRGB((nowMs / HANDS_STEP_MS) % 2 ? hands::RIGHT_COLOR : hands::LEFT_COLOR);
                     case Color::BaseHue:
                     default:
-                        return CHSV(lights::BASE_HUE, 255, 255);
+                        return CHSV(s.baseHue, 255, 255);
                     }
                 }
 
-                CRGB baseHue(const Settings &, uint32_t nowMs) { return colorOf(Color::BaseHue, nowMs); }
-                CRGB pitchHue(const Settings &, uint32_t nowMs) { return colorOf(Color::PitchHue, nowMs); }
-                CRGB keyColors(const Settings &, uint32_t nowMs) { return colorOf(Color::KeyColors, nowMs); }
-                CRGB handColors(const Settings &, uint32_t nowMs) { return colorOf(Color::Hands, nowMs); }
+                CRGB baseHue(const Settings &s, uint32_t nowMs) { return colorOf(s, Color::BaseHue, nowMs); }
+                CRGB pitchHue(const Settings &s, uint32_t nowMs) { return colorOf(s, Color::PitchHue, nowMs); }
+                CRGB keyColors(const Settings &s, uint32_t nowMs) { return colorOf(s, Color::KeyColors, nowMs); }
+                CRGB handColors(const Settings &s, uint32_t nowMs) { return colorOf(s, Color::Hands, nowMs); }
 
                 // ramps from dim to full, like playing harder and harder
                 CRGB velocity(const Settings &s, uint32_t nowMs)
                 {
-                    return colorOf(s.color, nowMs).nscale8(max<uint8_t>(phase(nowMs, SWATCH_PERIOD_MS), 32));
+                    return colorOf(s, s.color, nowMs).nscale8(max<uint8_t>(phase(nowMs, SWATCH_PERIOD_MS), 32));
                 }
 
-                CRGB full(const Settings &s, uint32_t nowMs) { return colorOf(s.color, nowMs); }
+                CRGB full(const Settings &s, uint32_t nowMs) { return colorOf(s, s.color, nowMs); }
 
                 // one key struck each period
                 CRGB pressedKey(const Settings &s, uint32_t nowMs)
                 {
-                    return colorOf(s.color, nowMs).nscale8(pluck(phase(nowMs, SWATCH_PERIOD_MS)));
+                    return colorOf(s, s.color, nowMs).nscale8(pluck(phase(nowMs, SWATCH_PERIOD_MS)));
                 }
 
                 // three quick strikes then a rest, like one key echoing up the octaves
@@ -69,14 +69,14 @@ namespace kbl {
                     uint32_t t = nowMs % SWATCH_PERIOD_MS;
                     if (t >= 3 * slotMs)
                         return CRGB::Black;
-                    return colorOf(s.color, nowMs).nscale8(pluck(phase(t, slotMs)));
+                    return colorOf(s, s.color, nowMs).nscale8(pluck(phase(t, slotMs)));
                 }
 
                 // PedalFade Off: a strike that settles and stays lit, like a Sustained Key
                 CRGB pedalHold(const Settings &s, uint32_t nowMs)
                 {
                     uint8_t p = phase(nowMs, 2 * SWATCH_PERIOD_MS);
-                    return colorOf(s.color, nowMs).nscale8(p < 40 ? 255 : 160);
+                    return colorOf(s, s.color, nowMs).nscale8(p < 40 ? 255 : 160);
                 }
 
                 // PedalFade On: a strike that holds, then dims out
@@ -85,13 +85,13 @@ namespace kbl {
                     const uint8_t HOLD = 40; // out of 255 of the period
                     uint8_t p = phase(nowMs, 2 * SWATCH_PERIOD_MS);
                     uint8_t left = p < HOLD ? 255 : 255 - (p - HOLD) * 255 / (255 - HOLD);
-                    return colorOf(s.color, nowMs).nscale8(scale8(left, left));
+                    return colorOf(s, s.color, nowMs).nscale8(scale8(left, left));
                 }
 
                 // BlankOnPress Off: the same key struck again while lit, which shows as one long light
                 CRGB restrikeLit(const Settings &s, uint32_t nowMs)
                 {
-                    return colorOf(s.color, nowMs);
+                    return colorOf(s, s.color, nowMs);
                 }
 
                 // BlankOnPress On: the same key struck again, with a dark gap before each strike
@@ -99,7 +99,28 @@ namespace kbl {
                 {
                     if (nowMs % (SWATCH_PERIOD_MS / 2) < BLANK_SWATCH_GAP_MS)
                         return CRGB::Black;
-                    return colorOf(s.color, nowMs);
+                    return colorOf(s, s.color, nowMs);
+                }
+
+                // three strikes, each dimmer, then a rest: a key and its overtones
+                CRGB harmonics(const Settings &s, uint32_t nowMs)
+                {
+                    const uint32_t slotMs = SWATCH_PERIOD_MS / 4;
+                    const uint8_t LEVELS[] = {255, 128, 85};
+                    uint32_t t = nowMs % SWATCH_PERIOD_MS;
+                    if (t >= 3 * slotMs)
+                        return CRGB::Black;
+                    return colorOf(s, s.color, nowMs).nscale8(scale8(pluck(phase(t, slotMs)), LEVELS[t / slotMs]));
+                }
+
+                // Brightness::Accent: a strike that starts white and settles into the current color
+                CRGB accent(const Settings &s, uint32_t nowMs)
+                {
+                    uint8_t p = phase(nowMs, SWATCH_PERIOD_MS);
+                    CRGB c = colorOf(s, s.color, nowMs);
+                    if (p < 64)
+                        nblend(c, CRGB::White, 255 - p * 4);
+                    return c.nscale8(pluck(p));
                 }
 
                 // random twinkle in shifting colors
@@ -123,6 +144,7 @@ namespace kbl {
             const Option LIGHT_MODE_OPTIONS[] = {
                 {"PressedKey", swatch::pressedKey},
                 {"AllOctaves", swatch::allOctaves},
+                {"Harmonics", swatch::harmonics},
             };
             static_assert(count(LIGHT_MODE_OPTIONS) == (size_t)LightMode::COUNT, "one Option per LightMode");
 
@@ -135,8 +157,9 @@ namespace kbl {
             static_assert(count(COLOR_OPTIONS) == (size_t)Color::COUNT, "one Option per Color");
 
             const Option BRIGHTNESS_OPTIONS[] = {
-                {"Velocity", swatch::velocity},
                 {"Full", swatch::full},
+                {"Velocity", swatch::velocity},
+                {"Accent", swatch::accent},
             };
             static_assert(count(BRIGHTNESS_OPTIONS) == (size_t)Brightness::COUNT, "one Option per Brightness");
 
@@ -150,8 +173,7 @@ namespace kbl {
                 {"Off", swatch::restrikeLit},
                 {"On", swatch::restrikeBlank},
             };
-            static_assert(count(BLANK_ON_PRESS_OPTIONS) == (size_t)BlankOnPress::COUNT, "one Option per BlankOnPress");
-        }
+            static_assert(count(BLANK_ON_PRESS_OPTIONS) == (size_t)BlankOnPress::COUNT, "one Option per BlankOnPress");        }
 
         // Settings Menu layout order, from FIRST_KEY upward. Add new groups at the end so the
         // groups before them keep their Keys.
@@ -166,8 +188,7 @@ namespace kbl {
             {"PedalFade", GroupKind::Radio, PEDAL_FADE_OPTIONS, count(PEDAL_FADE_OPTIONS),
              [](Settings &s) -> uint8_t & { return reinterpret_cast<uint8_t &>(s.pedalFade); }, nullptr},
             {"BlankOnPress", GroupKind::Radio, BLANK_ON_PRESS_OPTIONS, count(BLANK_ON_PRESS_OPTIONS),
-             [](Settings &s) -> uint8_t & { return reinterpret_cast<uint8_t &>(s.blankOnPress); }, nullptr},
-        };
+             [](Settings &s) -> uint8_t & { return reinterpret_cast<uint8_t &>(s.blankOnPress); }, nullptr},        };
         const size_t GROUP_COUNT = sizeof(GROUPS) / sizeof(GROUPS[0]);
 
         const MenuGroup *findGroup(const char *name)
@@ -201,7 +222,7 @@ namespace kbl {
                 debugf("%s%s=%s", first ? "" : " ", group.name, group.options[valueOf(group, s)].name);
                 first = false;
             }
-            debugf("\n");
+            debugf(" BaseHue=%d\n", s.baseHue);
         }
 
         // ---- Settings Menu state ----
@@ -288,6 +309,7 @@ namespace kbl {
                 return;
             menuOpen = false;
             debugf("Settings Menu: closed\n");
+            onMenuClose();
         }
 
         void toggle()

@@ -18,6 +18,7 @@
 kbl::Settings &currentSettings();
 void onSettingsChanged(); // after any Setting is set: logs the Settings and shows a Preview
 void onMenuOpen();        // clears live key state and stops Demo Mode
+void onMenuClose();       // saves the Settings
 
 namespace kbl {
     namespace menu {

@@ -8,6 +8,7 @@
 #include "render.h"
 #include "settings.h"
 #include "settings_menu.h"
+#include "settings_store.h"
 #include "demo_mode.h"
 #include "serial_commands.h"
 #include "rotary_encoder.h"
@@ -104,10 +105,19 @@ kbl::Settings &currentSettings()
     return settings;
 }
 
+// Settings changed in the menu are saved when it closes; others (serial `set`, the encoder's
+// hue) are saved straight away, subject to the store's rate limit.
+void saveSettingsUnlessMenuOpen()
+{
+    if (!kbl::menu::isOpen())
+        kbl::store::requestSave();
+}
+
 void onSettingsChanged()
 {
     debugf("Settings: ");
     kbl::menu::printSettings(settings);
+    saveSettingsUnlessMenuOpen();
     showPreview();
 }
 
@@ -121,7 +131,7 @@ void showBrightnessBar()
     {
         uint32_t start = (uint32_t)i * 256;
         uint8_t covered = length >= start + 255 ? 255 : length > start ? length - start : 0;
-        previewLEDs[i] = covered ? CRGB(CHSV(kbl::lights::BASE_HUE, 255, covered)) : CRGB(CRGB::Black);
+        previewLEDs[i] = covered ? CRGB(CHSV(settings.baseHue, 255, covered)) : CRGB(CRGB::Black);
     }
     startPreview(kbl::lights::BRIGHTNESS_BAR_MS);
 }
@@ -133,6 +143,15 @@ void setMasterBrightness(int level)
     masterScale = MIN_MASTER_SCALE + (255 - MIN_MASTER_SCALE) * (masterBrightness - 1) / (kbl::lights::MASTER_BRIGHTNESS_STEPS - 1);
     debugf("Master brightness: %d/%d (scale %d)\n", masterBrightness, kbl::lights::MASTER_BRIGHTNESS_STEPS, masterScale);
     showBrightnessBar();
+}
+
+// Color::BaseHue's hue; a uint8_t, so turning the encoder wraps all the way round
+void setBaseHue(uint8_t hue)
+{
+    settings.baseHue = hue;
+    debugf("Base hue: %d\n", hue);
+    saveSettingsUnlessMenuOpen();
+    showPreview();
 }
 
 void clearKeys()
@@ -155,6 +174,22 @@ void onMenuOpen()
     clearKeys();
     kbl::demo::stop();
     kbl::demo::recordActivity();
+}
+
+void onMenuClose()
+{
+    kbl::store::requestSave();
+}
+
+// Brightness::Accent: whether a note is much harder than the running average of the notes before it; then
+// adds it to that average. The average is in 1/16ths of a velocity step.
+uint16_t velocityAverage16 = kbl::accent::START_AVERAGE * 16;
+
+bool isAccented(uint8_t velocity)
+{
+    bool accented = velocity * 16 >= velocityAverage16 + kbl::accent::MARGIN * 16;
+    velocityAverage16 += ((int)velocity * 16 - (int)velocityAverage16) / kbl::accent::AVERAGE_NOTES;
+    return accented;
 }
 
 // returns -1 for notes outside the 88-key range
@@ -184,6 +219,7 @@ void handleNoteOn(byte channel, byte note, byte velocity)
     // Blank On Press: a Key whose LED is already lit goes dark briefly, so the press shows
     keyStates[i].blanking = isSounding(keyStates[i]) || kblLEDs[i];
     keyStates[i].pressedMs = millis();
+    keyStates[i].accented = isAccented(velocity);
     keyStates[i].held = true;
     keyStates[i].sustained = false;
     keyStates[i].velocity = velocity;
@@ -251,7 +287,11 @@ void handleRotary()
     RotaryEvents rotary = rotaryPoll();
     if (rotary.steps)
     {
-        setMasterBrightness(masterBrightness + rotary.steps);
+        // under Color::BaseHue the encoder turns the hue; Master Brightness stays where it was
+        if (settings.color == kbl::Color::BaseHue)
+            setBaseHue(settings.baseHue + rotary.steps * kbl::lights::BASE_HUE_STEP);
+        else
+            setMasterBrightness(masterBrightness + rotary.steps);
     }
     if (rotary.presses)
     {
@@ -382,6 +422,7 @@ void setup()
 
     buildSagCompensation();
     kbl::menu::begin();
+    kbl::store::begin(settings);
 
     debugf("Settings: ");
     kbl::menu::printSettings(settings);
@@ -411,6 +452,7 @@ void loop()
 
     kbl::demo::poll();
     kbl::menu::poll();
+    kbl::store::poll(settings);
 
     EVERY_N_MILLISECONDS(kbl::lights::FRAME_MS)
     {

@@ -28,12 +28,16 @@ namespace kbl {
 
     // ---- lights ----
     namespace lights {
+        static const uint8_t DEFAULT_BASE_HUE = HUE_AQUA;
+        // Under Color::BaseHue the encoder turns the hue this much per detent (256 = all the way round)
+        static const uint8_t BASE_HUE_STEP = 4;
         static const Settings DEFAULT_SETTINGS = {
             LightMode::PressedKey,
             Color::PitchHue,
             Brightness::Velocity,
             PedalFade::On,
             BlankOnPress::On,
+            DEFAULT_BASE_HUE,
         };
         // Pedal Fade: a Sustained Key dims at a steady rate (equal halvings per second, which looks
         // even to the eye) down to the brightness floor at the current Master Brightness, then goes
@@ -51,10 +55,34 @@ namespace kbl {
         // (out of 255), with dithering off, instead of cutting straight to black. The tail is
         // short enough that the flicker below the floor isn't seen.
         static const uint8_t BELOW_FLOOR_FADE_PER_FRAME = 96;
-        static const uint8_t BASE_HUE = HUE_AQUA;
         static const uint8_t MASTER_BRIGHTNESS_STEPS = 48; // encoder detents from dimmest to full brightness
         static const uint32_t PREVIEW_MS = 500;
         static const uint32_t BRIGHTNESS_BAR_MS = 1000;
+    }
+
+    // ---- harmonics ----
+    // LightMode::Harmonics lights each Sounding Key's overtones as well, each dimmer than the one
+    // below it. Where overtones of different Keys land on the same LED their brightness adds.
+    namespace harmonics {
+        struct Overtone {
+            uint8_t semitones; // above the Sounding Key
+            uint8_t level;     // brightness out of 255, relative to the Sounding Key
+        };
+        static const Overtone OVERTONES[] = {
+            {12, 128}, // 2nd harmonic: the octave, 1/2
+            {19, 85},  // 3rd: an octave and a fifth, 1/3
+            {24, 64},  // 4th: two octaves, 1/4
+        };
+    }
+
+    // ---- accent ----
+    // Brightness::Accent: a note pressed much harder than the notes before it flashes white, then settles
+    // into its color. "The notes before it" is a running average of their velocities.
+    namespace accent {
+        static const uint8_t MARGIN = 24;        // velocity above the running average that counts as accented
+        static const uint8_t AVERAGE_NOTES = 8;  // roughly how many recent notes the average follows
+        static const uint8_t START_AVERAGE = 64; // the average at boot, before any notes
+        static const uint32_t FLASH_MS = 250;    // how long the white takes to settle into the color
     }
 
     // ---- key colors ----
@@ -137,6 +165,12 @@ namespace kbl {
         static const uint32_t DEMO_TWINKLE_MS = 120;    // how often the Demo key's twinkle changes
         // Blank On Press swatch: the dark gap between strikes, longer than the real one so it shows
         static const uint32_t BLANK_SWATCH_GAP_MS = 150;
+    }
+
+    // ---- saved Settings (settings_store.h) ----
+    namespace store {
+        // Settings are saved to flash at most once in this long, to limit wear
+        static const uint32_t MIN_WRITE_INTERVAL_MS = 30 * 1000;
     }
 
     // ---- Demo Mode ----

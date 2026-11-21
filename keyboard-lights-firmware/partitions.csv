@@ -1,0 +1,14 @@
+# Flash layout for the 4 MB XIAO ESP32-C3. Same as the Arduino core's default.csv, pinned here so
+# a framework update can't move nvs (where Settings are saved) or the app slots.
+#
+# OTA-ready: otadata plus two equal app slots (ota_0, ota_1), so a future OTA update can write
+# the slot that isn't running. OTA isn't implemented yet; today the firmware runs from app0.
+# Keep nvs at the same offset and size if this is ever changed, or saved Settings are lost.
+#
+# Name,   Type, SubType, Offset,  Size, Flags
+nvs,      data, nvs,     0x9000,  0x5000,
+otadata,  data, ota,     0xe000,  0x2000,
+app0,     app,  ota_0,   0x10000, 0x140000,
+app1,     app,  ota_1,   0x150000,0x140000,
+spiffs,   data, spiffs,  0x290000,0x160000,
+coredump, data, coredump,0x3F0000,0x10000,

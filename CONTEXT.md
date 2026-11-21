@@ -56,6 +56,18 @@ A Setting under which Sustained Keys dim out and go dark a fixed time after rele
 **Blank On Press**:
 A Setting under which pressing a Key whose LED is already lit (it is Sounding, or still Fading) turns that LED off for a brief holdoff before it lights again, so every press shows.
 
+**Accent**:
+A Brightness Option: brightness follows velocity as under Velocity, and a Note pressed much harder than the Notes before it flashes white, then settles into its color.
+
+**Base Hue**:
+The hue every LED shows under the BaseHue Color. While that Color is selected, the rotary encoder turns the Base Hue instead of Master Brightness.
+
+**Overtone**:
+A Key above a Sounding Key that the Harmonics Light Mode also lights, dimmer: the octave, the octave and a fifth, and two octaves.
+
+**Saved Settings**:
+The Settings as last written to the board's flash, loaded at power-on. They are written when the Settings Menu closes, at most once every 30 seconds.
+
 ### Control
 
 **Master Brightness**:

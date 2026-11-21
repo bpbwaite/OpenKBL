@@ -19,6 +19,7 @@ void handleNoteOn(byte channel, byte note, byte velocity);
 void handleNoteOff(byte channel, byte note, byte velocity);
 void handleControlChange(byte channel, byte number, byte value);
 void setMasterBrightness(int level);
+void setBaseHue(uint8_t hue);
 
 namespace kbl {
     namespace serialcmd {
@@ -75,6 +76,7 @@ namespace kbl {
             debugf("  settings             print the current settings\n");
             debugf("  menu                 open/close the Settings Menu, like the encoder switch\n");
             debugf("  bright <1-%d>        master brightness\n", lights::MASTER_BRIGHTNESS_STEPS);
+            debugf("  hue <0-255>          base hue, for color basehue\n");
             debugf("  demo                 start demo mode; on <note> or sus on stops it\n");
             debugf("  help\n");
         }
@@ -168,6 +170,15 @@ namespace kbl {
             }
         }
 
+        inline void cmdHue(char** args, size_t argc) {
+            if (argc == 1 && isNumber(args[0]) && atoi(args[0]) <= 255) {
+                debugf("> hue %s\n", args[0]);
+                setBaseHue(atoi(args[0]));
+            } else {
+                debugf("? usage: hue <0-255>\n");
+            }
+        }
+
         inline void runLine(char* line) {
             char* words[MAX_NOTES + 2];
             size_t count = 0;
@@ -192,6 +203,7 @@ namespace kbl {
             else if (strcasecmp(cmd, "settings") == 0) menu::printSettings(currentSettings());
             else if (strcasecmp(cmd, "menu") == 0)    menu::toggle();
             else if (strcasecmp(cmd, "bright") == 0)  cmdBright(args, argc);
+            else if (strcasecmp(cmd, "hue") == 0)     cmdHue(args, argc);
             else if (strcasecmp(cmd, "demo") == 0)    demo::start();
             else if (strcasecmp(cmd, "help") == 0)    printHelp();
             else debugf("? unknown command '%s' (type help)\n", cmd);
