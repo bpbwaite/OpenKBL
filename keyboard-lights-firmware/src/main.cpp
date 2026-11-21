@@ -360,7 +360,7 @@ uint8_t renderKeys(bool &dither)
         if (target[i])
         {
             kblLEDs[i] = target[i];
-            kblLEDs[i].nscale8(sagCompensation[i]);
+            kblLEDs[i].nscale8_video(sagCompensation[i]); // _video: never takes a lit channel to 0
         }
         else if (blank[i])
         {

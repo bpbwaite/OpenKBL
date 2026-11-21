@@ -167,8 +167,10 @@ namespace kbl {
                 }
             }
 
-            // Hue-based colors take the brightness as the CHSV value, so they keep FastLED's
-            // dimming curve; fixed RGB colors are scaled linearly.
+            // Every color is made at full brightness and scaled linearly, so brightness reaches
+            // the strip as given and the softest key lands on the brightness floor. Hue-based
+            // colors don't take brightness as the CHSV value: FastLED squares that value, which
+            // takes soft keys to 0 or 1 per channel and loses the hue.
             CRGB colorOf(uint8_t ledIndex, uint8_t brightness, const Lit &lit, const Settings &s)
             {
                 switch (s.color)
@@ -178,12 +180,12 @@ namespace kbl {
                         return CRGB(hands::CORRECTED_COLOR).nscale8(brightness);
                     return CRGB(lit.hand == hands::Hand::Left ? hands::LEFT_COLOR : hands::RIGHT_COLOR).nscale8(brightness);
                 case Color::PitchHue:
-                    return CHSV(ledIndex * 255 / (leds::NUM_LEDS - 1), 255, brightness);
+                    return CRGB(CHSV(ledIndex * lights::PITCH_HUE_SPAN / (leds::NUM_LEDS - 1), 255, 255)).nscale8(brightness);
                 case Color::KeyColors:
                     return CRGB(keycolors::PITCH_CLASS_COLORS[keyPitchClass(ledIndex)]).nscale8(brightness);
                 case Color::BaseHue:
                 default:
-                    return CHSV(s.baseHue, 255, brightness);
+                    return CRGB(CHSV(s.baseHue, 255, 255)).nscale8(brightness);
                 }
             }
         }
@@ -206,7 +208,7 @@ namespace kbl {
             }
 
             // Pedal Fade works on the finished color, so it fades at the same rate under every
-            // Brightness and Color (hue-based colors would otherwise add FastLED's dimming curve).
+            // Brightness and Color.
             for (uint8_t i = 0; i < leds::NUM_LEDS; i++)
             {
                 blank[i] = lit[i].blank;

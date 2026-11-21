@@ -31,6 +31,9 @@ namespace kbl {
         static const uint8_t DEFAULT_BASE_HUE = HUE_AQUA;
         // Under Color::BaseHue the encoder turns the hue this much per detent (256 = all the way round)
         static const uint8_t BASE_HUE_STEP = 4;
+        // Color::PitchHue runs from red at the lowest key through this much of the hue wheel
+        // (256 = all the way round) at the highest: 250 is ~352 degrees, so it stops short of red.
+        static const uint8_t PITCH_HUE_SPAN = 250;
         static const Settings DEFAULT_SETTINGS = {
             LightMode::PressedKey,
             Color::PitchHue,
