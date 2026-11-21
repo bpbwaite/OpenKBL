@@ -35,6 +35,8 @@ namespace kbl {
                         return CHSV(phase(nowMs, RAINBOW_PERIOD_MS), 255, 255);
                     case Color::KeyColors:
                         return CRGB(keycolors::PITCH_CLASS_COLORS[(nowMs / KEY_COLOR_STEP_MS) % 12]);
+                    case Color::Hands:
+                        return CRGB((nowMs / HANDS_STEP_MS) % 2 ? hands::RIGHT_COLOR : hands::LEFT_COLOR);
                     case Color::BaseHue:
                     default:
                         return CHSV(lights::BASE_HUE, 255, 255);
@@ -44,6 +46,7 @@ namespace kbl {
                 CRGB baseHue(const Settings &, uint32_t nowMs) { return colorOf(Color::BaseHue, nowMs); }
                 CRGB pitchHue(const Settings &, uint32_t nowMs) { return colorOf(Color::PitchHue, nowMs); }
                 CRGB keyColors(const Settings &, uint32_t nowMs) { return colorOf(Color::KeyColors, nowMs); }
+                CRGB handColors(const Settings &, uint32_t nowMs) { return colorOf(Color::Hands, nowMs); }
 
                 // ramps from dim to full, like playing harder and harder
                 CRGB velocity(const Settings &s, uint32_t nowMs)
@@ -113,6 +116,7 @@ namespace kbl {
                 {"BaseHue", swatch::baseHue},
                 {"PitchHue", swatch::pitchHue},
                 {"KeyColors", swatch::keyColors},
+                {"Hands", swatch::handColors},
             };
             static_assert(count(COLOR_OPTIONS) == (size_t)Color::COUNT, "one Option per Color");
 

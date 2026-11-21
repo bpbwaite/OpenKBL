@@ -3,6 +3,7 @@
 #include <Arduino.h>
 #include <FastLED.h>
 
+#include "hands.h"
 #include "settings.h"
 
 // All tunable behaviour lives here. Values fixed by the PCB or the piano are in hardware.h.
@@ -73,6 +74,46 @@ namespace kbl {
         };
     }
 
+    // ---- hands ----
+    // Color::Hands works out which hand pressed each Key from the order of presses (hands.h).
+    // It forgets where the hands were whenever Key state is cleared: the Settings Menu opens,
+    // Demo Mode starts, or the piano sends All Notes Off.
+    namespace hands {
+        // With nothing else to go on, Keys from here up are the right hand's, below it the left's.
+        static const uint8_t SPLIT_NOTE = 60; // MIDI note: C4, so B3 and below are left
+        static const Config CONFIG = {
+            SPLIT_NOTE - 21, // splitKey (21 = A0, the first key)
+            17,              // maxSpan: an eleventh, in semitones, thumb to pinky
+            // fingerSpan: semitones fingers 2-5 reach without the thumb. An octave suits
+            // experienced players and larger hands; if Keys near a stretched hand's thumb land in
+            // the wrong hand, try 10 (a minor seventh).
+            12,
+            2, // thumbPairSpan: the thumb can hold two Keys this close (C-D, E-F, C#-D#)
+            // costs, in half-semitones of distance a hand moves
+            24, // fingerOverCost: per semitone fingers 2-5 would stretch past fingerSpan
+            8,  // thumbPairCost: the thumb holding two Keys, for a 6th Key in one hand
+            24, // crossCost: the hands crossed over
+            12, // idleCrossCost: a hand reaching past where the other, empty hand last played
+            12, // flipCost: moving a Held Key to the other hand when correcting a guess
+            3,  // busyCost: per Key beyond the first a hand already holds, when it takes another
+            4,  // freshCost: first Key for a hand that hasn't played yet
+            5,  // wrongSideCost: per half-semitone a fresh hand reaches past the Split Point
+            16, // closeCall: a Key that won its hand by less than this can be moved by a later Key
+            2,  // velocityTie: hands within this of each other go by the nearer velocity
+        };
+        static const uint32_t LEFT_COLOR = 0x0000FF;
+        static const uint32_t RIGHT_COLOR = 0x00FF00;
+        // With -DKBL_HAND_DEBUG, a Held Key whose hand was corrected flashes this color.
+        static const uint32_t CORRECTED_COLOR = 0xFF0000;
+        static const uint32_t CORRECTED_FLASH_MS = 400;
+
+        // the hand by the Split Point alone, for simulated Keys
+        inline Hand bySplitPoint(uint8_t keyIndex)
+        {
+            return keyIndex < CONFIG.splitKey ? Hand::Left : Hand::Right;
+        }
+    }
+
     // ---- Settings Menu ----
     // Opened and closed with the encoder switch. Which Settings it shows, and in what order, is
     // the GROUPS table in settings_menu.cpp.
@@ -89,6 +130,7 @@ namespace kbl {
         static const uint32_t SWATCH_PERIOD_MS = 1500;  // one cycle of the strike and ramp animations
         static const uint32_t RAINBOW_PERIOD_MS = 4000; // one trip around the hue wheel (PitchHue, Demo)
         static const uint32_t KEY_COLOR_STEP_MS = 400;  // how long KeyColors shows each PitchClass color
+        static const uint32_t HANDS_STEP_MS = 600;      // how long Hands shows each hand's color
         static const uint32_t DEMO_TWINKLE_MS = 120;    // how often the Demo key's twinkle changes
     }
 

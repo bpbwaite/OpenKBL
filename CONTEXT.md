@@ -28,6 +28,12 @@ A Key that has been released while the sustain pedal keeps it going.
 A Key that is either Held or Sustained.
 _Avoid_: Lit (of a Key)
 
+**Hand**:
+The left or right hand, as worked out from the order of Notes for Color::Hands. Every Held Key belongs to exactly one.
+
+**Split Point**:
+The Key where, with nothing else to go on, the right Hand begins: C4, so B3 and below are left.
+
 ### Lights
 
 **LED**:

@@ -26,6 +26,7 @@ namespace kbl {
         BaseHue,   // kbl::lights::BASE_HUE everywhere
         PitchHue,  // rainbow across the keyboard
         KeyColors, // per-PitchClass colors from kbl::keycolors
+        Hands,     // one color per hand, from kbl::hands
         COUNT
     };
 

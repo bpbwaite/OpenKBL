@@ -29,6 +29,7 @@ namespace kbl {
                     {
                         demoKeys[roll].held = true;
                         demoKeys[roll].velocity = random(1, 128);
+                        demoKeys[roll].hand = hands::bySplitPoint(roll);
                         keyStartMs[roll] = millis();
                     }
                 }

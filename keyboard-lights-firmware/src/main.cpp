@@ -16,6 +16,9 @@ CRGB kblLEDs[kbl::leds::NUM_LEDS];
 
 KeyState keyStates[kbl::leds::NUM_LEDS];
 
+// works out which hand pressed each Key, for Color::Hands; follows keyStates
+kbl::hands::Tracker handTracker(kbl::hands::CONFIG);
+
 // Per-LED brightness scale (255 = unscaled) compensating for supply sag along the strip.
 // Assumes the drop grows linearly from LED 0 (supply end) to FAR_END_VOLTAGE at the last LED,
 // and that each LED's power, and so its brightness, is proportional to its supply voltage.
@@ -137,6 +140,7 @@ void clearKeys()
     {
         key = {};
     }
+    handTracker.reset();
 }
 
 void onDemoModeStart()
@@ -179,6 +183,18 @@ void handleNoteOn(byte channel, byte note, byte velocity)
     keyStates[i].held = true;
     keyStates[i].sustained = false;
     keyStates[i].velocity = velocity;
+    keyStates[i].hand = handTracker.press(i, velocity);
+
+    // a new Key can show that an earlier guess was wrong
+    for (uint8_t m = 0; m < handTracker.movedCount(); m++)
+    {
+        uint8_t k = handTracker.moved()[m];
+        keyStates[k].hand = handTracker.handOf(k);
+#ifdef KBL_HAND_DEBUG
+        keyStates[k].correctedMs = millis() | 1; // never 0, which means never corrected
+        debugf("Hand: key %d corrected to %s\n", k, keyStates[k].hand == kbl::hands::Hand::Left ? "left" : "right");
+#endif
+    }
 }
 
 // the MIDI library also routes note-on with velocity 0 here
@@ -195,6 +211,7 @@ void handleNoteOff(byte channel, byte note, byte velocity)
     if (!keyStates[i].held)
         return;
     keyStates[i].held = false;
+    handTracker.release(i);
     keyStates[i].sustained = sustainPedalDown;
     keyStates[i].releasedMs = millis();
 }

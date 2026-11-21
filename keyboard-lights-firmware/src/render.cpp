@@ -14,6 +14,8 @@ namespace kbl {
                 uint8_t velocity; // how hard it lights; 0 = unlit
                 bool fading;      // under Pedal Fade: Sustained, not held
                 uint32_t fadeMs;  // how long it has been fading
+                hands::Hand hand; // for Color::Hands
+                bool corrected;   // its hand was just corrected (KBL_HAND_DEBUG)
             };
 
             // A Key's Lit, as if it were the only Key lighting its LED.
@@ -22,7 +24,11 @@ namespace kbl {
                 if (!isSounding(key))
                     return {};
                 bool fading = !key.held && s.pedalFade == PedalFade::On;
-                return {key.velocity, fading, fading ? nowMs - key.releasedMs : 0};
+                bool corrected = false;
+#ifdef KBL_HAND_DEBUG
+                corrected = key.correctedMs && nowMs - key.correctedMs < hands::CORRECTED_FLASH_MS;
+#endif
+                return {key.velocity, fading, fading ? nowMs - key.releasedMs : 0, key.hand, corrected};
             }
 
             // ---- Light Mode: which LEDs light, and how hard ----
@@ -113,10 +119,14 @@ namespace kbl {
 
             // Hue-based colors take the brightness as the CHSV value, so they keep FastLED's
             // dimming curve; fixed RGB colors are scaled linearly.
-            CRGB colorOf(uint8_t ledIndex, uint8_t brightness, const Settings &s)
+            CRGB colorOf(uint8_t ledIndex, uint8_t brightness, const Lit &lit, const Settings &s)
             {
                 switch (s.color)
                 {
+                case Color::Hands:
+                    if (lit.corrected)
+                        return CRGB(hands::CORRECTED_COLOR).nscale8(brightness);
+                    return CRGB(lit.hand == hands::Hand::Left ? hands::LEFT_COLOR : hands::RIGHT_COLOR).nscale8(brightness);
                 case Color::PitchHue:
                     return CHSV(ledIndex * 255 / (leds::NUM_LEDS - 1), 255, brightness);
                 case Color::KeyColors:
@@ -151,10 +161,10 @@ namespace kbl {
                     target[i] = CRGB::Black;
                     continue;
                 }
-                target[i] = colorOf(i, brightnessOf(lit[i].velocity, s), s);
+                target[i] = colorOf(i, brightnessOf(lit[i].velocity, s), lit[i], s);
                 if (lit[i].fading)
                 {
-                    CRGB full = colorOf(i, 255, s);
+                    CRGB full = colorOf(i, 255, lit[i], s);
                     target[i] = fade(target[i], max(full.r, max(full.g, full.b)), lit[i].fadeMs, floorPeak);
                 }
             }
@@ -166,6 +176,7 @@ namespace kbl {
             {
                 keys[i] = {};
                 keys[i].velocity = map(i, 0, leds::NUM_LEDS - 1, 1, 127); // shows off Brightness::Velocity
+                keys[i].hand = hands::bySplitPoint(i);                    // shows off Color::Hands
             }
 
             switch (s.lightMode)
