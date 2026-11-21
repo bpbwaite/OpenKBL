@@ -4331,16 +4331,6 @@
 			(embedded_fonts no)
 		)
 	)
-	(text "don't need 2 resistor spots for the optocoupler stuff. pick one."
-		(exclude_from_sim no)
-		(at 168.402 100.33 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-		)
-		(uuid "02e04360-5fa1-4183-b6c9-1b67529c3675")
-	)
 	(text "allow powering VBUS from barrel jack w/protection"
 		(exclude_from_sim no)
 		(at 169.672 88.9 0)
@@ -8748,7 +8738,7 @@
 				)
 			)
 		)
-		(property "Value" "280"
+		(property "Value" "680"
 			(at 262.382 51.816 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -17393,7 +17383,7 @@
 				)
 			)
 		)
-		(property "Value" "220"
+		(property "Value" "1k"
 			(at 234.95 53.34 90)
 			(show_name no)
 			(do_not_autoplace no)

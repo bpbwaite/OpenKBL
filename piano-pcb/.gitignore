@@ -1,3 +1,5 @@
 ~*.lck
 *-backups/
 .history/
+
+bom/ibom.html
