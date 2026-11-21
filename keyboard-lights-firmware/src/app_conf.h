@@ -32,8 +32,8 @@ namespace kbl {
             LightMode::PressedKey,
             Color::PitchHue,
             Brightness::Velocity,
-            PedalFade::Off,
-            BlankOnPress::Off,
+            PedalFade::On,
+            BlankOnPress::On,
         };
         // Pedal Fade: a Sustained Key dims at a steady rate (equal halvings per second, which looks
         // even to the eye) down to the brightness floor at the current Master Brightness, then goes
