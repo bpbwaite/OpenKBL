@@ -212,12 +212,12 @@ namespace kbl {
 }
 
 inline void serialCommandsBegin() {
-    kbl::serialcmd::printHelp();
+    okbl::serialcmd::printHelp();
 }
 
 // non-blocking; call every loop
 inline void serialCommandsPoll() {
-    static char line[kbl::serialcmd::MAX_LINE_CHARS + 1];
+    static char line[okbl::serialcmd::MAX_LINE_CHARS + 1];
     static size_t len = 0;
     static bool overflow = false;
 
@@ -225,14 +225,14 @@ inline void serialCommandsPoll() {
         char c = Serial.read();
         if (c == '\r' || c == '\n') {
             if (overflow) {
-                debugf("? line too long (max %d chars)\n", kbl::serialcmd::MAX_LINE_CHARS);
+                debugf("? line too long (max %d chars)\n", okbl::serialcmd::MAX_LINE_CHARS);
             } else if (len > 0) {
                 line[len] = '\0';
-                kbl::serialcmd::runLine(line);
+                okbl::serialcmd::runLine(line);
             }
             len = 0;
             overflow = false;
-        } else if (len < kbl::serialcmd::MAX_LINE_CHARS) {
+        } else if (len < okbl::serialcmd::MAX_LINE_CHARS) {
             line[len++] = c;
         } else {
             overflow = true;

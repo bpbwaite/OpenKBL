@@ -8,14 +8,14 @@
 // Settings Menu: opened with the encoder switch. While it's open, each white Key at the bass end
 // is one Option of a Setting (or a Menu Action) and its LED shows that Option's Swatch: full
 // brightness when selected, dim otherwise. Settings are laid out in GROUPS order from
-// kbl::menu::FIRST_KEY, each taking one white Key per Option, with GAP_WHITE_KEYS unlit white
+// okbl::menu::FIRST_KEY, each taking one white Key per Option, with GAP_WHITE_KEYS unlit white
 // Keys between groups. Black Keys are never used.
 //
 // GROUPS is also the single list of Settings for the serial `set`/`settings` commands and the
 // debug log. Configured in app_conf.h.
 
 // defined in main.cpp
-kbl::Settings &currentSettings();
+okbl::Settings &currentSettings();
 void onSettingsChanged(); // after any Setting is set: logs the Settings and shows a Preview
 void onMenuOpen();        // clears live key state and stops Demo Mode
 void onMenuClose();       // saves the Settings

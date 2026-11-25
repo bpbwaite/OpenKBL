@@ -5,7 +5,7 @@
 #include "key_state.h"
 
 // Demo Mode: LEDs light at random under the current Settings with no Keys pressed,
-// until someone plays. Starts by itself after kbl::demo::IDLE_MS without playing, or
+// until someone plays. Starts by itself after okbl::demo::IDLE_MS without playing, or
 // on request (the Demo key in the Settings Menu, `demo` serial command). Configured in app_conf.h.
 
 // defined in main.cpp: reset live key state when Demo Mode starts, which also clears

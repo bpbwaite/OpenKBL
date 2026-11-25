@@ -13,7 +13,7 @@ struct KeyState
     bool blanking;       // Blank On Press: its LED was lit when pressed, so it's held dark first
     uint32_t pressedMs;  // millis() when the key was last pressed, for Blank On Press
     bool accented;       // pressed much harder than the notes before it, for Brightness::Accent
-    kbl::hands::Hand hand; // which hand pressed it, for Color::Hands
+    okbl::hands::Hand hand; // which hand pressed it, for Color::Hands
     uint32_t correctedMs;  // millis() when its hand was last corrected; 0 = never (KBL_HAND_DEBUG)
 };
 

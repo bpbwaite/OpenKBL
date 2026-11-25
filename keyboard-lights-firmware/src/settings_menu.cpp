@@ -253,7 +253,7 @@ namespace kbl {
             {
                 while (true)
                 {
-                    debugf("Settings Menu layout error: %s (see kbl::menu in app_conf.h)\n", problem);
+                    debugf("Settings Menu layout error: %s (see okbl::menu in app_conf.h)\n", problem);
                     delay(2000);
                 }
             }

@@ -21,9 +21,9 @@ namespace {
         0, 1, -1, 0
     };
 
-    const uint32_t PIN_A_MASK = 1u << kbl::pins::ROTARY_A;
-    const uint32_t PIN_B_MASK = 1u << kbl::pins::ROTARY_B;
-    const uint32_t PIN_SW_MASK = 1u << kbl::pins::ROTARY_SW;
+    const uint32_t PIN_A_MASK = 1u << okbl::pins::ROTARY_A;
+    const uint32_t PIN_B_MASK = 1u << okbl::pins::ROTARY_B;
+    const uint32_t PIN_SW_MASK = 1u << okbl::pins::ROTARY_SW;
 
     // written only by the handlers
     volatile int32_t detentTotal = 0;
@@ -61,7 +61,7 @@ namespace {
     // rather than this edge's level, which bounce may already have flipped back.
     void IRAM_ATTR onSwitchEdge() {
         uint32_t now = millis();
-        if (switchSettledUp && now - switchEdgeMs >= kbl::rotary::SWITCH_DEBOUNCE_MS) {
+        if (switchSettledUp && now - switchEdgeMs >= okbl::rotary::SWITCH_DEBOUNCE_MS) {
             pressTotal = pressTotal + 1;
         }
         switchSettledUp = readPins() & PIN_SW_MASK;
@@ -70,25 +70,25 @@ namespace {
 }
 
 void rotaryBegin() {
-    pinMode(kbl::pins::ROTARY_A, INPUT);
-    pinMode(kbl::pins::ROTARY_B, INPUT);
-    pinMode(kbl::pins::ROTARY_SW, kbl::pins::ROTARY_SW_PIN_MODE);
+    pinMode(okbl::pins::ROTARY_A, INPUT);
+    pinMode(okbl::pins::ROTARY_B, INPUT);
+    pinMode(okbl::pins::ROTARY_SW, okbl::pins::ROTARY_SW_PIN_MODE);
 
     uint32_t pins = readPins();
     encoderState = ((pins & PIN_A_MASK) ? 0b10 : 0) | ((pins & PIN_B_MASK) ? 0b01 : 0);
     switchSettledUp = pins & PIN_SW_MASK;
-    switchEdgeMs = millis() - kbl::rotary::SWITCH_DEBOUNCE_MS;
+    switchEdgeMs = millis() - okbl::rotary::SWITCH_DEBOUNCE_MS;
 
-    attachInterrupt(kbl::pins::ROTARY_A, onEncoderEdge, CHANGE);
-    attachInterrupt(kbl::pins::ROTARY_B, onEncoderEdge, CHANGE);
-    attachInterrupt(kbl::pins::ROTARY_SW, onSwitchEdge, CHANGE);
+    attachInterrupt(okbl::pins::ROTARY_A, onEncoderEdge, CHANGE);
+    attachInterrupt(okbl::pins::ROTARY_B, onEncoderEdge, CHANGE);
+    attachInterrupt(okbl::pins::ROTARY_SW, onSwitchEdge, CHANGE);
 }
 
 RotaryEvents rotaryPoll() {
     int32_t detents = detentTotal;
     uint32_t presses = pressTotal;
     RotaryEvents events = {
-        (int32_t)((uint32_t)detents - (uint32_t)detentsSeen) * kbl::rotary::CLOCKWISE,
+        (int32_t)((uint32_t)detents - (uint32_t)detentsSeen) * okbl::rotary::CLOCKWISE,
         presses - pressesSeen,
     };
     detentsSeen = detents;

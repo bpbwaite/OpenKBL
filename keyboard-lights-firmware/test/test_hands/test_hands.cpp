@@ -12,11 +12,11 @@
 
 #include "hands.h"
 
-using kbl::hands::Config;
-using kbl::hands::Hand;
-using kbl::hands::Tracker;
+using okbl::hands::Config;
+using okbl::hands::Hand;
+using okbl::hands::Tracker;
 
-// matches kbl::hands in app_conf.h
+// matches okbl::hands in app_conf.h
 static const uint8_t LOWEST_NOTE = 21; // A0
 static const Config CONFIG = {
     60 - LOWEST_NOTE, // Split Point: C4 is the lowest right-hand key

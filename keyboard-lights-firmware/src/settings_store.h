@@ -11,7 +11,7 @@
 // missing or out of range keeps its default, so Settings can be added, or Options removed,
 // without clearing the store. Renaming a group loses its saved value.
 //
-// Writes are rate-limited to save the flash: at most one write per kbl::store::MIN_WRITE_INTERVAL_MS,
+// Writes are rate-limited to save the flash: at most one write per okbl:::store::MIN_WRITE_INTERVAL_MS,
 // with boot counting as a write. A save asked for too soon waits until the interval is up, and
 // then writes whatever the Settings are by that time. Saving Settings that haven't changed since
 // the last write doesn't touch the flash.

@@ -91,7 +91,7 @@ namespace kbl {
                 }
             }
 
-            // Each Sounding Key lights itself and its overtones (kbl::harmonics::OVERTONES), each
+            // Each Sounding Key lights itself and its overtones (okbl::harmonics::OVERTONES), each
             // overtone dimmer. Overtones that land on the same LED add up, so Keys that share
             // overtones (consonant intervals) brighten them.
             void lightHarmonics(Lit *lit, const KeyState *keys, const Settings &s, uint32_t nowMs)
@@ -245,7 +245,7 @@ namespace kbl {
             case LightMode::AllOctaves:
             {
                 // one C major chord at middle C; the Light Mode spreads it across the keyboard
-                const uint8_t C4 = 60 - kbl::keys::MIDI_NOTE_LOWEST;
+                const uint8_t C4 = 60 - okbl::keys::MIDI_NOTE_LOWEST;
                 for (uint8_t i : {C4, uint8_t(C4 + 4), uint8_t(C4 + 7)})
                 {
                     keys[i].held = true;
@@ -256,7 +256,7 @@ namespace kbl {
             case LightMode::Harmonics:
             {
                 // a C major chord at C3, so its overtones (up to C5) overlap and add up
-                const uint8_t C3 = 48 - kbl::keys::MIDI_NOTE_LOWEST;
+                const uint8_t C3 = 48 - okbl::keys::MIDI_NOTE_LOWEST;
                 for (uint8_t i : {C3, uint8_t(C3 + 4), uint8_t(C3 + 7)})
                 {
                     keys[i].held = true;

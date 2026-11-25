@@ -19,7 +19,7 @@ public:
     explicit MidiSerialTransport(HardwareSerial& serial) : serial_(serial) {}
 
     void begin(unsigned long baud) {
-        serial_.begin(baud, SERIAL_8N1, kbl::pins::MIDI_RX, -1);
+        serial_.begin(baud, SERIAL_8N1, okbl::pins::MIDI_RX, -1);
     }
 
     byte read() {

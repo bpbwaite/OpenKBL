@@ -14,7 +14,7 @@
 //   2. handle it in render.cpp
 //   3. add a group, with one Option per value, to GROUPS in settings_menu.cpp; the menu layout,
 //      the serial `set`/`settings` commands and the debug log all come from that table
-//   4. give it a default in kbl::lights::DEFAULT_SETTINGS (app_conf.h)
+//   4. give it a default in okbl::lights::DEFAULT_SETTINGS (app_conf.h)
 // A Setting that isn't a choice of Options (baseHue) is a plain field instead: it has no menu
 // group, so give it a default, and print and save it alongside the groups.
 // Adding an Option to an existing Setting: add it to the enum before COUNT, handle it in
@@ -27,34 +27,34 @@ namespace kbl {
     enum class LightMode : uint8_t {
         PressedKey, // only the pressed key
         AllOctaves, // every key of a Sounding PitchClass
-        Harmonics,  // the pressed key and, dimmer, its overtones (kbl::harmonics)
+        Harmonics,  // the pressed key and, dimmer, its overtones (okbl::harmonics)
         COUNT
     };
 
     enum class Color : uint8_t {
         BaseHue,   // Settings::baseHue everywhere; the encoder turns the hue instead of Master Brightness
         PitchHue,  // rainbow across the keyboard
-        KeyColors, // per-PitchClass colors from kbl::keycolors
-        Hands,     // one color per hand, from kbl::hands
+        KeyColors, // per-PitchClass colors from okbl::keycolors
+        Hands,     // one color per hand, from okbl::hands
         COUNT
     };
 
     enum class Brightness : uint8_t {
         Full,     // always full brightness
         Velocity, // harder presses are brighter
-        Accent,   // Velocity, and a note much harder than the recent ones flashes white, then settles (kbl::accent)
+        Accent,   // Velocity, and a note much harder than the recent ones flashes white, then settles (okbl::accent)
         COUNT
     };
 
     enum class PedalFade : uint8_t {
         Off, // Sustained Keys stay fully lit while the pedal is down
-        On,  // Sustained Keys dim out over kbl::lights::SUSTAIN_FADE_MS after release
+        On,  // Sustained Keys dim out over okbl::lights::SUSTAIN_FADE_MS after release
         COUNT
     };
 
     enum class BlankOnPress : uint8_t {
         Off, // pressing a Key whose LED is already lit leaves it lit
-        On,  // ...turns that LED off for kbl::lights::BLANK_ON_PRESS_MS first, so every press shows
+        On,  // ...turns that LED off for okbl::lights::BLANK_ON_PRESS_MS first, so every press shows
         COUNT
     };
 

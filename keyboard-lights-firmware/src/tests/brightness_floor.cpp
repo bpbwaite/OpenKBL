@@ -26,8 +26,8 @@ namespace {
     const uint32_t CYCLE_MS = 1000;
     const uint8_t DITHER_GLOBAL_BRIGHTNESS = 127; // FastLED scales by (127 + 1) / 256 = exactly half
 
-    CRGB leds[kbl::leds::NUM_LEDS];
-    CRGB fullColors[kbl::leds::NUM_LEDS]; // each LED's color at full brightness
+    CRGB leds[okbl::leds::NUM_LEDS];
+    CRGB fullColors[okbl::leds::NUM_LEDS]; // each LED's color at full brightness
     bool dithering = false;
 
     // largest channel value put in the LED buffer for a key, before global brightness
@@ -40,7 +40,7 @@ namespace {
     void keyName(uint8_t keyIndex, char *out)
     {
         static const char *NAMES[12] = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"};
-        uint8_t note = keyIndex + kbl::keys::MIDI_NOTE_LOWEST;
+        uint8_t note = keyIndex + okbl::keys::MIDI_NOTE_LOWEST;
         sprintf(out, "%s%d", NAMES[note % 12], note / 12 - 1);
     }
 
@@ -57,7 +57,7 @@ namespace {
 
     void fillLEDs()
     {
-        for (uint8_t i = 0; i < kbl::leds::NUM_LEDS; i++)
+        for (uint8_t i = 0; i < okbl::leds::NUM_LEDS; i++)
         {
             leds[i] = scaleToPeak(fullColors[i], keyPeak(i));
         }
@@ -86,7 +86,7 @@ namespace {
         debugf("Brightness floor test: brightness = largest RGB value reaching the LED\n");
         debugf("key=brightness with dithering off (0.5 lower with dithering on)\n");
         char name[5];
-        for (uint8_t i = 0; i < kbl::leds::NUM_LEDS; i++)
+        for (uint8_t i = 0; i < okbl::leds::NUM_LEDS; i++)
         {
             keyName(i, name);
             debugf("%s=%d%s", name, i + 1, (i % 12 == 11) ? "\n" : "  ");
@@ -100,10 +100,10 @@ void setup()
     debugStart();
     debugWaitForInterface();
 
-    digitalWrite(kbl::pins::ENABLE_PSU, HIGH);
+    digitalWrite(okbl::pins::ENABLE_PSU, HIGH);
     rotaryBegin();
 
-    FastLED.addLeds<WS2812B, kbl::pins::RGB_DATA, EOrder::GRB>(leds, kbl::leds::NUM_LEDS);
+    FastLED.addLeds<WS2812B, okbl::pins::RGB_DATA, EOrder::GRB>(leds, okbl::leds::NUM_LEDS);
     FastLED.setCorrection(UncorrectedColor);
     FastLED.setTemperature(UncorrectedTemperature);
 
@@ -126,7 +126,7 @@ void loop()
         newColors();
     }
     // re-send at the normal frame rate, like the real firmware does; dithering needs it too
-    EVERY_N_MILLISECONDS(kbl::lights::FRAME_MS)
+    EVERY_N_MILLISECONDS(okbl::lights::FRAME_MS)
     {
         FastLED.show();
     }
