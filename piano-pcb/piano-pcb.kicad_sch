@@ -4331,16 +4331,6 @@
 			(embedded_fonts no)
 		)
 	)
-	(text "allow powering VBUS from barrel jack w/protection"
-		(exclude_from_sim no)
-		(at 169.672 88.9 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-		)
-		(uuid "12dbd404-165d-46e7-9502-6882b17c506b")
-	)
 	(text "octaves (12 notes)\nA#,B,C,C#,D,D#,E,F,F#,G,G#,A"
 		(exclude_from_sim no)
 		(at 56.896 219.964 0)
@@ -4350,26 +4340,6 @@
 			)
 		)
 		(uuid "148692a2-ad1c-4fd3-a035-070a3731b637")
-	)
-	(text "use esp32c3; \n- midi rx connected to adc1\n- no strapping pins in use"
-		(exclude_from_sim no)
-		(at 168.148 94.996 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-		)
-		(uuid "191cc945-512e-4a80-b317-09b61711f9de")
-	)
-	(text "next version notes"
-		(exclude_from_sim no)
-		(at 167.64 85.598 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-		)
-		(uuid "2d2d987f-6925-4dd0-90b6-4603c9fd9e76")
 	)
 	(text "highest 3 notes"
 		(exclude_from_sim no)
@@ -4381,16 +4351,6 @@
 		)
 		(uuid "30c2e597-d168-4a43-a41b-e8594f5cef83")
 	)
-	(text "short, or 22-47"
-		(exclude_from_sim no)
-		(at 117.348 35.052 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-		)
-		(uuid "4a2dc98f-3330-4c5f-8d43-b5238c6685ad")
-	)
 	(text "need 7x of this"
 		(exclude_from_sim no)
 		(at 56.388 223.266 0)
@@ -4401,9 +4361,9 @@
 		)
 		(uuid "4cef304f-4233-4676-bb21-f59c80a36b3c")
 	)
-	(text "resistors all quarter watt"
+	(text "resistors all 1/8 or 1/4 watt"
 		(exclude_from_sim no)
-		(at 241.808 75.438 0)
+		(at 237.998 74.422 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4411,15 +4371,15 @@
 		)
 		(uuid "56c5570c-e542-432c-b8c1-06138994efa3")
 	)
-	(text "no rotary encoder-full midi device control"
+	(text "or equivalent footprint"
 		(exclude_from_sim no)
-		(at 157.988 103.886 0)
+		(at 167.132 73.66 0)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
 		)
-		(uuid "7e98bfa0-823e-4594-88cf-bc6e174ef9a7")
+		(uuid "a099ee5b-4935-4752-91b5-9753b9caf60b")
 	)
 	(junction
 		(at 85.09 278.13)
@@ -5015,6 +4975,16 @@
 		)
 		(uuid "784497d6-3163-4c0c-84bf-86c029cc8e07")
 	)
+	(polyline
+		(pts
+			(xy 195.58 43.18) (xy 195.58 46.99)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "7d2f367b-1320-4bb6-b232-c08bad793290")
+	)
 	(wire
 		(pts
 			(xy 238.76 38.1) (xy 238.76 34.29)
@@ -5094,6 +5064,16 @@
 			(type default)
 		)
 		(uuid "866eeb71-8349-4620-b87b-eed6d2d9dadd")
+	)
+	(polyline
+		(pts
+			(xy 191.77 43.18) (xy 195.58 43.18)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "87a092e8-91c8-41f3-9bed-fcb33183d5e8")
 	)
 	(wire
 		(pts
@@ -5534,6 +5514,16 @@
 			(type default)
 		)
 		(uuid "ef26e9f5-1974-443f-983a-dfe47ef5cb08")
+	)
+	(polyline
+		(pts
+			(xy 191.77 46.99) (xy 195.58 46.99)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "efef2570-a249-4e17-a920-bad64011bc23")
 	)
 	(wire
 		(pts
@@ -8647,7 +8637,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "TBD"
+		(property "Value" "22"
 			(at 113.284 37.084 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -12362,7 +12352,7 @@
 				)
 			)
 		)
-		(property "Footprint" "glibri:Bourns Rotary Encoder PEC11R-4x-Sx"
+		(property "Footprint" "glibri:Bourns_PEC11R-4x-Sx_RotaryEncoder"
 			(at 243.84 105.156 0)
 			(hide yes)
 			(show_name no)

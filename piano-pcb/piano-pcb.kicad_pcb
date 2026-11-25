@@ -3444,7 +3444,7 @@
 			)
 		)
 	)
-	(footprint "glibri:Bourns Rotary Encoder PEC11R-4x-Sx"
+	(footprint "glibri:Bourns_PEC11R-4x-Sx_RotaryEncoder"
 		(layer "F.Cu")
 		(uuid "4e647cc4-b968-45b1-9293-3b79dc486750")
 		(at 95.9 68.5 -90)
