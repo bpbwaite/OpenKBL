@@ -56,5 +56,11 @@ esptool.py --chip esp32c3 --port COMx --baud 460800 write_flash --flash_mode dio
 - still todo: BOM, gerbers
 
 ## Credits
-- FastLED
-- MIDI Library
+
+This project is MIT licensed, see [LICENSE](LICENSE). The firmware images include code from these
+projects, each under its own license:
+
+- [FastLED](https://github.com/FastLED/FastLED): MIT
+- [Arduino MIDI Library](https://github.com/FortySevenEffects/arduino_midi_library): MIT
+- [Arduino core for ESP32](https://github.com/espressif/arduino-esp32): LGPL-2.1
+- [ESP-IDF](https://github.com/espressif/esp-idf): Apache-2.0
