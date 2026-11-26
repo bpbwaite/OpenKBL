@@ -1,6 +1,6 @@
 # Open Keyboard Lights
 
-OpenKeyBoardLights (okbl) is an embedded project for MIDI keyboards. \
+OpenKeyBoardLights (okbl) is an embedded project for MIDI piano keyboards. \
 The device sits above the keys of an 88-key piano, and illuminates when keys are played. \
 It's less expensive than some commercial options, and has more features!
 
@@ -19,14 +19,15 @@ Revision 0:
 |-|-|
 | Accurate LED spacing | ✅ |
 | Low resistance traces | ✅ |
-| New improved PCB Revision | 🚧 |
+| Newly improved PCB | 🚧 |
 ---
 | Software Feature | Implemented |
 |-|-|
-| Color modes | ✅ |
-| Demo mode (5 min) | ✅ |
+| Various color modes | ✅ |
+| Demo mode (5 min timer) | ✅ |
 | Control over serial | ✅ |
 | Control with desktop app | 🚧 |
+| Control over WiFi | 🚧 |
 | Training mode | 🚧 |
 | Hand mode (blue-green) neural model | 🚧 |
 ---
@@ -40,7 +41,8 @@ pio run -e release_seeed_xiao_esp32c3 -t upload
 ```
 With esptool v4+, using a prebuilt image:
 ```
-esptool.py --chip esp32c3 --port COMx --baud 460800 write_flash --flash_mode dio --flash_freq 80m --flash_size 4MB 0x0 okbl-firmware-merged.bin
+esptool.py --chip esp32c3 --port COMx --baud 460800 write_flash --flash_mode dio --flash_freq 80m --flash_size 4MB 0x0 okbl-firmware-<version>-merged.bin
+
 ```
 
 ## Building
@@ -48,6 +50,10 @@ esptool.py --chip esp32c3 --port COMx --baud 460800 write_flash --flash_mode dio
 - Open [keyboard-lights-firmware/](keyboard-lights-firmware/) with PlatformIO
 - Set `-DPCB_REVISION` in `platformio.ini` to match your board.
 - For testing without a piano, build with `-DKBL_USB_MIDI_DEBUG`. Type `help` to list commands.
+
+## Assembly
+
+- still todo: BOM, gerbers
 
 ## Credits
 - FastLED

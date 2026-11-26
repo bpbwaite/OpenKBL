@@ -3,7 +3,7 @@
 Open Keyboard Lights (okbl): an LED strip above an 88-key piano that lights in response to MIDI.
 This file is the only place for agent notes. Don't add design docs, ADRs, specs or issue files.
 Design decisions belong in code comments next to the code they explain, and plans live in the
-conversation. [README.md](README.md) is for people using and building the device.
+conversation. [README.md](README.md) is for people using and building the device. Don't modify the README, but DO suggest changes when there are inconsistencies with new changes.
 
 ## Repo layout
 
@@ -14,7 +14,8 @@ keyboard-lights-firmware/   PlatformIO project (ESP32-C3, Arduino framework)
   src/                      all firmware, flat, one module per .h/.cpp pair
   src/tests/                on-device hardware tests, excluded from the main build
   test/test_hands/          PC tests for hands.cpp, plain g++, not PlatformIO's test runner
-  dist/                     prebuilt release images for esptool
+  scripts/dist.py           post-build step of the release env; writes the dist/ images
+  dist/                     versioned release images for esptool (gitignored)
 piano-pcb/                  KiCad 10 project (schematic, PCB, BOM; gerbers are gitignored)
 models/                     3D printable case
 ```
@@ -52,17 +53,11 @@ on hardware, so say what you couldn't check. With `-DKBL_USB_MIDI_DEBUG`, the US
 accepts commands (`help`, `on <note>`, `set <setting> <option>`, `menu`, …) for testing without a
 piano.
 
-To refresh `dist/` after a release build, use the esptool that PlatformIO installed
-(`~/.platformio/packages/tool-esptool/esptool`, v5). The offsets match `pio run -t upload`:
-
-```
-B=.pio/build/release_seeed_xiao_esp32c3
-esptool --chip esp32c3 merge-bin -o dist/okbl-firmware-merged.bin --flash-mode dio --flash-freq 80m --flash-size 4MB \
-  0x0 $B/bootloader.bin 0x8000 $B/partitions.bin \
-  0xe000 ~/.platformio/packages/framework-arduinoespressif32/tools/partitions/boot_app0.bin \
-  0x10000 $B/firmware.bin
-cp $B/firmware.bin dist/okbl-firmware-app.bin
-```
+The release version is `version` in `[common]` of `platformio.ini`. The code sees it as
+`OKBL_VERSION`. Each release build runs `scripts/dist.py`, which writes
+`dist/okbl-firmware-<version>-merged.bin` (flash at 0x0) and `-app.bin` (0x10000) using the same
+offsets as `pio run -t upload`. Bump the version before building a release, or the build
+overwrites that version's images.
 
 ## Compatibility traps
 
