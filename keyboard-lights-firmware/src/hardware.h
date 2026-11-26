@@ -32,12 +32,10 @@ namespace okbl
     } // namespace rotary
     namespace leds
     {
-        static const uint32_t NUM_LEDS       = 88;
-        static const float PSU_VOLTAGE       = 5.0;
-        static const float PSU_MAX_MA        = 4000.0; // derated to 80% of 5A
-        static const float LED_DRAW_MA       = 60.0;
-        static const float LED_DRAW_COMBINED = leds::NUM_LEDS * LED_DRAW_MA;
-        static const float USB_MAX_MA        = 500.0; // budget when the board may be powered from USB
+        static const uint32_t NUM_LEDS = 88;
+        static const float PSU_VOLTAGE = 5.0;
+        static const float PSU_MAX_MA  = 4000.0; // derated to 80% of 5A
+        static const float USB_MAX_MA  = 500.0;  // budget when the board may be powered from USB
 
         // Measured with the brightness_floor test: below this, an LED flickers or shows the
         // wrong color. It's the lowest the largest of R, G and B may be when it reaches the strip,

@@ -303,6 +303,9 @@ uint8_t renderKeys(bool &dither) {
     }
 
     // Power limiting is done here rather than by FastLED, so the floor can allow for it.
+    // FastLED's power model assumes 42 mA per LED at full white (16, 11 and 15 mA for R, G and B).
+    // Real 5050 LEDs draw 34 to 60 mA, depending on the manufacturer: ours measured 34 mA with
+    // the power_draw test, so the limit is a little conservative here.
     uint8_t requested = okbl::menu::isOpen() ? max(masterScale, okbl::menu::MIN_GLOBAL_BRIGHTNESS) : masterScale;
     uint8_t scale     = calculate_max_brightness_for_power_mW(kblLEDs, okbl::leds::NUM_LEDS, requested, powerBudgetMW);
     raiseToFloor(target, scale);
