@@ -27,72 +27,63 @@ okbl::hands::Tracker handTracker(okbl::hands::CONFIG);
 // linear PWM duty, so the scale is applied directly to the final colors with no gamma curve.
 uint8_t sagCompensation[okbl::leds::NUM_LEDS];
 
-void buildSagCompensation()
-{
+void buildSagCompensation() {
     const float sag = okbl::leds::PSU_VOLTAGE - okbl::leds::FAR_END_VOLTAGE;
-    for (uint8_t i = 0; i < okbl::leds::NUM_LEDS; i++)
-    {
-        float ledVoltage = okbl::leds::PSU_VOLTAGE - sag * i / (okbl::leds::NUM_LEDS - 1);
-        float powerLost = 1.0f - ledVoltage / okbl::leds::PSU_VOLTAGE; // fraction lost to resistance
+    for (uint8_t i = 0; i < okbl::leds::NUM_LEDS; i++) {
+        float ledVoltage      = okbl::leds::PSU_VOLTAGE - sag * i / (okbl::leds::NUM_LEDS - 1);
+        float powerLost       = 1.0f - ledVoltage / okbl::leds::PSU_VOLTAGE; // fraction lost to resistance
         float farEndPowerLost = sag / okbl::leds::PSU_VOLTAGE;
-        sagCompensation[i] = lroundf(255.0f * (1.0f - farEndPowerLost) / (1.0f - powerLost));
+        sagCompensation[i]    = lroundf(255.0f * (1.0f - farEndPowerLost) / (1.0f - powerLost));
     }
-    debugf("Sag compensation: LED 0 = %d, LED %d = %d\n",
-           sagCompensation[0], (int)okbl::leds::NUM_LEDS - 1, sagCompensation[okbl::leds::NUM_LEDS - 1]);
+    debugf("Sag compensation: LED 0 = %d, LED %d = %d\n", sagCompensation[0], (int) okbl::leds::NUM_LEDS - 1, sagCompensation[okbl::leds::NUM_LEDS - 1]);
 }
 
 bool sustainPedalDown = false;
 
-okbl::Settings settings = okbl::lights::DEFAULT_SETTINGS;
+okbl::Settings settings  = okbl::lights::DEFAULT_SETTINGS;
 uint8_t masterBrightness = okbl::lights::MASTER_BRIGHTNESS_STEPS;
-uint8_t masterScale = 255; // FastLED global brightness for masterBrightness, before power limiting
+uint8_t masterScale      = 255; // FastLED global brightness for masterBrightness, before power limiting
 
 // Lowest global brightness at which a full-value channel still reaches the strip as
 // MIN_PEAK; any dimmer and the floor can't be met. FastLED sends (255 * (scale + 1)) >> 8.
 static const uint8_t MIN_MASTER_SCALE = (okbl::leds::MIN_PEAK * 256 + 254) / 255 - 1;
-uint32_t powerBudgetMW = okbl::leds::PSU_MAX_MA * okbl::leds::PSU_VOLTAGE;
-uint8_t lastScale = 255; // global brightness the last frame went out with
+uint32_t powerBudgetMW                = okbl::leds::PSU_MAX_MA * okbl::leds::PSU_VOLTAGE;
+uint8_t lastScale                     = 255; // global brightness the last frame went out with
 
 // Smallest buffer value that still reaches the strip as at least MIN_PEAK under global
 // brightness `scale`. FastLED sends (value * (scale + 1)) >> 8; dithering only adds to that.
-uint8_t floorBeforeScale(uint8_t scale)
-{
-    uint16_t value = ((uint16_t)okbl::leds::MIN_PEAK * 256 + scale) / (scale + 1); // rounded up
+uint8_t floorBeforeScale(uint8_t scale) {
+    uint16_t value = ((uint16_t) okbl::leds::MIN_PEAK * 256 + scale) / (scale + 1); // rounded up
     return min<uint16_t>(value, 255);
 }
 
 // The floor for Pedal Fade to aim at, from the last frame's global brightness (this frame's
 // isn't known until its LEDs are rendered). Sag compensation dims LEDs nearer the supply by
 // up to ~2% more; raiseToFloor() holds those at the floor for the last moments.
-uint8_t currentFloor()
-{
+uint8_t currentFloor() {
     return floorBeforeScale(lastScale);
 }
 
 // While a preview runs it takes over every LED; key state keeps updating underneath.
 CRGB previewLEDs[okbl::leds::NUM_LEDS];
-uint32_t previewStartMs = 0;
+uint32_t previewStartMs    = 0;
 uint32_t previewDurationMs = 0; // 0 = no preview running
 
 // previewLEDs must already be filled
-void startPreview(uint32_t durationMs)
-{
-    previewStartMs = millis();
+void startPreview(uint32_t durationMs) {
+    previewStartMs    = millis();
     previewDurationMs = durationMs;
 }
 
-bool previewRunning()
-{
-    if (previewDurationMs && millis() - previewStartMs >= previewDurationMs)
-    {
+bool previewRunning() {
+    if (previewDurationMs && millis() - previewStartMs >= previewDurationMs) {
         previewDurationMs = 0;
     }
     return previewDurationMs != 0;
 }
 
 // Renders the current Settings from simulated keys, so the Preview always matches them.
-void showPreview()
-{
+void showPreview() {
     KeyState keys[okbl::leds::NUM_LEDS];
     okbl::render::previewKeys(keys, settings);
     bool blank[okbl::leds::NUM_LEDS];
@@ -100,44 +91,38 @@ void showPreview()
     startPreview(okbl::lights::PREVIEW_MS);
 }
 
-okbl::Settings &currentSettings()
-{
+okbl::Settings &currentSettings() {
     return settings;
 }
 
 // Settings changed in the menu are saved when it closes; others (serial `set`, the encoder's
 // hue) are saved straight away, subject to the store's rate limit.
-void saveSettingsUnlessMenuOpen()
-{
+void saveSettingsUnlessMenuOpen() {
     if (!okbl::menu::isOpen())
         okbl::store::requestSave();
 }
 
-void onSettingsChanged()
-{
+void onSettingsChanged() {
     debugf("Settings: ");
     okbl::menu::printSettings(settings);
     saveSettingsUnlessMenuOpen();
     showPreview();
 }
 
-void showBrightnessBar()
-{
+void showBrightnessBar() {
     // Bar length in 1/256ths of an LED, so every detent moves it the same distance even though
     // a step is a fraction of an LED. The LED at the tip is lit in proportion to how much of it
     // the bar covers (the brightness floor keeps it visible).
-    uint32_t length = (uint32_t)masterBrightness * okbl::leds::NUM_LEDS * 256 / okbl::lights::MASTER_BRIGHTNESS_STEPS;
-    for (uint8_t i = 0; i < okbl::leds::NUM_LEDS; i++)
-    {
-        uint32_t start = (uint32_t)i * 256;
+    uint32_t length = (uint32_t) masterBrightness * okbl::leds::NUM_LEDS * 256 / okbl::lights::MASTER_BRIGHTNESS_STEPS;
+    for (uint8_t i = 0; i < okbl::leds::NUM_LEDS; i++) {
+        uint32_t start  = (uint32_t) i * 256;
         uint8_t covered = length >= start + 255 ? 255 : length > start ? length - start : 0;
-        previewLEDs[i] = covered ? CRGB(CHSV(settings.baseHue, 255, covered)) : CRGB(CRGB::Black);
+        previewLEDs[i]  = covered ? CRGB(CHSV(settings.baseHue, 255, covered)) : CRGB(CRGB::Black);
     }
     startPreview(okbl::lights::BRIGHTNESS_BAR_MS);
 }
 
-void setMasterBrightness(int level)
-{
+void setMasterBrightness(int level) {
     masterBrightness = constrain(level, 1, okbl::lights::MASTER_BRIGHTNESS_STEPS);
     // evenly spaced from MIN_MASTER_SCALE (level 1) to 255 (top level)
     masterScale = MIN_MASTER_SCALE + (255 - MIN_MASTER_SCALE) * (masterBrightness - 1) / (okbl::lights::MASTER_BRIGHTNESS_STEPS - 1);
@@ -146,38 +131,32 @@ void setMasterBrightness(int level)
 }
 
 // Color::BaseHue's hue; a uint8_t, so turning the encoder wraps all the way round
-void setBaseHue(uint8_t hue)
-{
+void setBaseHue(uint8_t hue) {
     settings.baseHue = hue;
     debugf("Base hue: %d\n", hue);
     saveSettingsUnlessMenuOpen();
     showPreview();
 }
 
-void clearKeys()
-{
-    for (KeyState &key : keyStates)
-    {
+void clearKeys() {
+    for (KeyState &key : keyStates) {
         key = {};
     }
     handTracker.reset();
 }
 
-void onDemoModeStart()
-{
+void onDemoModeStart() {
     clearKeys();
     sustainPedalDown = false;
 }
 
-void onMenuOpen()
-{
+void onMenuOpen() {
     clearKeys();
     okbl::demo::stop();
     okbl::demo::recordActivity();
 }
 
-void onMenuClose()
-{
+void onMenuClose() {
     okbl::store::requestSave();
 }
 
@@ -185,25 +164,21 @@ void onMenuClose()
 // adds it to that average. The average is in 1/16ths of a velocity step.
 uint16_t velocityAverage16 = okbl::accent::START_AVERAGE * 16;
 
-bool isAccented(uint8_t velocity)
-{
+bool isAccented(uint8_t velocity) {
     bool accented = velocity * 16 >= velocityAverage16 + okbl::accent::MARGIN * 16;
-    velocityAverage16 += ((int)velocity * 16 - (int)velocityAverage16) / okbl::accent::AVERAGE_NOTES;
+    velocityAverage16 += ((int) velocity * 16 - (int) velocityAverage16) / okbl::accent::AVERAGE_NOTES;
     return accented;
 }
 
 // returns -1 for notes outside the 88-key range
-int noteToKeyIndex(byte note)
-{
-    if (note < okbl::keys::MIDI_NOTE_LOWEST || note > okbl::keys::MIDI_NOTE_HIGHEST)
-    {
+int noteToKeyIndex(byte note) {
+    if (note < okbl::keys::MIDI_NOTE_LOWEST || note > okbl::keys::MIDI_NOTE_HIGHEST) {
         return -1;
     }
     return note - okbl::keys::MIDI_NOTE_LOWEST;
 }
 
-void handleNoteOn(byte channel, byte note, byte velocity)
-{
+void handleNoteOn(byte channel, byte note, byte velocity) {
     int i = noteToKeyIndex(note);
     if (i < 0)
         return;
@@ -217,18 +192,17 @@ void handleNoteOn(byte channel, byte note, byte velocity)
     okbl::demo::stop();
 
     // Blank On Press: a Key whose LED is already lit goes dark briefly, so the press shows
-    keyStates[i].blanking = isSounding(keyStates[i]) || kblLEDs[i];
+    keyStates[i].blanking  = isSounding(keyStates[i]) || kblLEDs[i];
     keyStates[i].pressedMs = millis();
-    keyStates[i].accented = isAccented(velocity);
-    keyStates[i].held = true;
+    keyStates[i].accented  = isAccented(velocity);
+    keyStates[i].held      = true;
     keyStates[i].sustained = false;
-    keyStates[i].velocity = velocity;
-    keyStates[i].hand = handTracker.press(i, velocity);
+    keyStates[i].velocity  = velocity;
+    keyStates[i].hand      = handTracker.press(i, velocity);
 
     // a new Key can show that an earlier guess was wrong
-    for (uint8_t m = 0; m < handTracker.movedCount(); m++)
-    {
-        uint8_t k = handTracker.moved()[m];
+    for (uint8_t m = 0; m < handTracker.movedCount(); m++) {
+        uint8_t k         = handTracker.moved()[m];
         keyStates[k].hand = handTracker.handOf(k);
 #ifdef KBL_HAND_DEBUG
         keyStates[k].correctedMs = millis() | 1; // never 0, which means never corrected
@@ -238,8 +212,7 @@ void handleNoteOn(byte channel, byte note, byte velocity)
 }
 
 // the MIDI library also routes note-on with velocity 0 here
-void handleNoteOff(byte channel, byte note, byte velocity)
-{
+void handleNoteOff(byte channel, byte note, byte velocity) {
     int i = noteToKeyIndex(note);
     if (i < 0)
         return;
@@ -252,14 +225,12 @@ void handleNoteOff(byte channel, byte note, byte velocity)
         return;
     keyStates[i].held = false;
     handTracker.release(i);
-    keyStates[i].sustained = sustainPedalDown;
+    keyStates[i].sustained  = sustainPedalDown;
     keyStates[i].releasedMs = millis();
 }
 
-void handleControlChange(byte channel, byte number, byte value)
-{
-    if (number == okbl::midi::CC_ALL_SOUND_OFF || number == okbl::midi::CC_ALL_NOTES_OFF)
-    {
+void handleControlChange(byte channel, byte number, byte value) {
+    if (number == okbl::midi::CC_ALL_SOUND_OFF || number == okbl::midi::CC_ALL_NOTES_OFF) {
         clearKeys();
         return;
     }
@@ -269,63 +240,50 @@ void handleControlChange(byte channel, byte number, byte value)
     okbl::demo::recordActivity();
 
     sustainPedalDown = value >= 64;
-    if (sustainPedalDown)
-    {
+    if (sustainPedalDown) {
         okbl::demo::stop();
     }
-    else
-    {
-        for (KeyState &key : keyStates)
-        {
+    else {
+        for (KeyState &key : keyStates) {
             key.sustained = false;
         }
     }
 }
 
-void handleRotary()
-{
+void handleRotary() {
     RotaryEvents rotary = rotaryPoll();
-    if (rotary.steps)
-    {
+    if (rotary.steps) {
         // under Color::BaseHue the encoder turns the hue; Master Brightness stays where it was
         if (settings.color == okbl::Color::BaseHue)
             setBaseHue(settings.baseHue + rotary.steps * okbl::lights::BASE_HUE_STEP);
         else
             setMasterBrightness(masterBrightness + rotary.steps);
     }
-    if (rotary.presses)
-    {
+    if (rotary.presses) {
         okbl::menu::toggle();
     }
 }
 
-
 // Keeps lit LEDs out of the flickering range: those below the floor are raised to it,
 // keeping their color.
-void raiseToFloor(const CRGB *target, uint8_t scale)
-{
+void raiseToFloor(const CRGB *target, uint8_t scale) {
     const uint8_t floorPeak = floorBeforeScale(scale);
-    for (uint8_t i = 0; i < okbl::leds::NUM_LEDS; i++)
-    {
-        CRGB &led = kblLEDs[i];
+    for (uint8_t i = 0; i < okbl::leds::NUM_LEDS; i++) {
+        CRGB &led    = kblLEDs[i];
         uint8_t peak = max(led.r, max(led.g, led.b));
         if (!target[i] || peak == 0 || peak >= floorPeak)
             continue;
-        led = CRGB((led.r * floorPeak + peak / 2) / peak,
-                   (led.g * floorPeak + peak / 2) / peak,
-                   (led.b * floorPeak + peak / 2) / peak);
+        led = CRGB((led.r * floorPeak + peak / 2) / peak, (led.g * floorPeak + peak / 2) / peak, (led.b * floorPeak + peak / 2) / peak);
     }
 }
 
 // Fading LEDs below the floor would flicker, so they fade out quickly (a short tail rather than
 // a cut to black). Returns true if any are in that tail, so the frame goes out undithered.
-bool hurryFadeBelowFloor(const CRGB *target, uint8_t scale)
-{
+bool hurryFadeBelowFloor(const CRGB *target, uint8_t scale) {
     const uint8_t floorPeak = floorBeforeScale(scale);
-    bool any = false;
-    for (uint8_t i = 0; i < okbl::leds::NUM_LEDS; i++)
-    {
-        CRGB &led = kblLEDs[i];
+    bool any                = false;
+    for (uint8_t i = 0; i < okbl::leds::NUM_LEDS; i++) {
+        CRGB &led    = kblLEDs[i];
         uint8_t peak = max(led.r, max(led.g, led.b));
         if (target[i] || peak == 0 || peak >= floorPeak)
             continue;
@@ -337,59 +295,49 @@ bool hurryFadeBelowFloor(const CRGB *target, uint8_t scale)
 
 // Fills kblLEDs and returns the global brightness to show them with. dither is set false
 // while any LED is fading out below the brightness floor.
-uint8_t renderKeys(bool &dither)
-{
+uint8_t renderKeys(bool &dither) {
     CRGB frame[okbl::leds::NUM_LEDS];
     bool blank[okbl::leds::NUM_LEDS] = {};
-    const CRGB *target = frame;
-    if (previewRunning())
-    {
+    const CRGB *target               = frame;
+    if (previewRunning()) {
         target = previewLEDs;
     }
-    else if (okbl::menu::isOpen())
-    {
+    else if (okbl::menu::isOpen()) {
         okbl::menu::render(frame, millis());
     }
-    else
-    {
+    else {
         okbl::render::computeTargets(frame, blank, okbl::demo::active() ? okbl::demo::keys() : keyStates, settings, millis(), currentFloor());
     }
 
-    for (uint8_t i = 0; i < okbl::leds::NUM_LEDS; i++)
-    {
-        if (target[i])
-        {
+    for (uint8_t i = 0; i < okbl::leds::NUM_LEDS; i++) {
+        if (target[i]) {
             kblLEDs[i] = target[i];
             kblLEDs[i].nscale8_video(sagCompensation[i]); // _video: never takes a lit channel to 0
         }
-        else if (blank[i])
-        {
+        else if (blank[i]) {
             kblLEDs[i] = CRGB::Black; // Blank On Press: straight off, not a fade
         }
-        else
-        {
+        else {
             kblLEDs[i].fadeToBlackBy(okbl::lights::FADE_PER_FRAME);
         }
     }
 
     // Power limiting is done here rather than by FastLED, so the floor can allow for it.
     uint8_t requested = okbl::menu::isOpen() ? max(masterScale, okbl::menu::MIN_GLOBAL_BRIGHTNESS) : masterScale;
-    uint8_t scale = calculate_max_brightness_for_power_mW(kblLEDs, okbl::leds::NUM_LEDS, requested, powerBudgetMW);
+    uint8_t scale     = calculate_max_brightness_for_power_mW(kblLEDs, okbl::leds::NUM_LEDS, requested, powerBudgetMW);
     raiseToFloor(target, scale);
     // raising dim LEDs adds a little power; settle once more
     uint8_t settled = calculate_max_brightness_for_power_mW(kblLEDs, okbl::leds::NUM_LEDS, scale, powerBudgetMW);
-    if (settled < scale)
-    {
+    if (settled < scale) {
         scale = settled;
         raiseToFloor(target, scale);
     }
-    dither = !hurryFadeBelowFloor(target, scale);
+    dither    = !hurryFadeBelowFloor(target, scale);
     lastScale = scale;
     return scale;
 }
 
-void setup()
-{
+void setup() {
 
     debugStart();
     debugWaitForInterface();
@@ -411,8 +359,7 @@ void setup()
 
     FastLED.addLeds<WS2812B, okbl::pins::RGB_DATA, EOrder::GRB>(kblLEDs, okbl::leds::NUM_LEDS);
 
-    if (PCB_REVISION == 0)
-    {
+    if (PCB_REVISION == 0) {
         // the board may or may not be running on USB, so we should limit current to around 500mA
         // I'll uncomment this line when I deploy the board
         // Alternative smart thing to do: assume the PSU is connected, but if we detect a PC connection at any point during operation,
@@ -440,12 +387,10 @@ void setup()
     serialCommandsBegin();
 }
 
-void loop()
-{
+void loop() {
 
     // drain everything buffered so held/released state is current before rendering
-    while (MIDI.read())
-    {
+    while (MIDI.read()) {
     }
     serialCommandsPoll(); // no-op unless KBL_USB_MIDI_DEBUG
     handleRotary();
@@ -454,16 +399,14 @@ void loop()
     okbl::menu::poll();
     okbl::store::poll(settings);
 
-    EVERY_N_MILLISECONDS(okbl::lights::FRAME_MS)
-    {
+    EVERY_N_MILLISECONDS(okbl::lights::FRAME_MS) {
         bool dither;
         uint8_t scale = renderKeys(dither);
         FastLED.setDither(dither ? BINARY_DITHER : DISABLE_DITHER);
         FastLED.show(scale);
     }
 
-    EVERY_N_SECONDS(okbl::debug::FPS_REPORT_S)
-    {
+    EVERY_N_SECONDS(okbl::debug::FPS_REPORT_S) {
         debugf("FastLED at %d fps\n", FastLED.getFPS());
     }
 }

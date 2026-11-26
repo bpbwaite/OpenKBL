@@ -4,9 +4,12 @@
 #include "hardware.h"
 #include "pitch_class.h"
 
-namespace okbl {
-    namespace render {
-        namespace {
+namespace okbl
+{
+    namespace render
+    {
+        namespace
+        {
             using pitch::keyPitchClass;
 
             // What the Light Mode decides for one LED.
@@ -22,11 +25,10 @@ namespace okbl {
             };
 
             // A Key's Lit, as if it were the only Key lighting its LED.
-            Lit keyLit(const KeyState &key, const Settings &s, uint32_t nowMs)
-            {
+            Lit keyLit(const KeyState &key, const Settings &s, uint32_t nowMs) {
                 if (!isSounding(key))
                     return {};
-                bool fading = !key.held && s.pedalFade == PedalFade::On;
+                bool fading    = !key.held && s.pedalFade == PedalFade::On;
                 bool corrected = false;
 #ifdef KBL_HAND_DEBUG
                 corrected = key.correctedMs && nowMs - key.correctedMs < hands::CORRECTED_FLASH_MS;
@@ -43,34 +45,29 @@ namespace okbl {
             // Adds k to the LED c, when more than one Key lights it. It takes the harder velocity
             // (and that Key's hand), adds up the levels, and fades only if both are fading, from
             // the more recent release.
-            void merge(Lit &c, const Lit &k)
-            {
+            void merge(Lit &c, const Lit &k) {
                 if (!k.velocity)
                     return;
-                if (!c.velocity)
-                {
+                if (!c.velocity) {
                     c = k;
                     return;
                 }
-                if (k.velocity > c.velocity)
-                {
-                    c.velocity = k.velocity;
-                    c.hand = k.hand;
+                if (k.velocity > c.velocity) {
+                    c.velocity  = k.velocity;
+                    c.hand      = k.hand;
                     c.corrected = k.corrected;
                 }
                 c.fading = c.fading && k.fading;
                 c.fadeMs = c.fading ? min(c.fadeMs, k.fadeMs) : 0;
-                c.blank = c.blank || k.blank; // a pressed Key blanks every LED it lights
-                c.level = min(255, c.level + k.level);
+                c.blank  = c.blank || k.blank; // a pressed Key blanks every LED it lights
+                c.level  = min(255, c.level + k.level);
                 c.accent = max(c.accent, k.accent);
             }
 
             // ---- Light Mode: which LEDs light, and how hard ----
 
-            void lightPressedKey(Lit *lit, const KeyState *keys, const Settings &s, uint32_t nowMs)
-            {
-                for (uint8_t i = 0; i < leds::NUM_LEDS; i++)
-                {
+            void lightPressedKey(Lit *lit, const KeyState *keys, const Settings &s, uint32_t nowMs) {
+                for (uint8_t i = 0; i < leds::NUM_LEDS; i++) {
                     lit[i] = keyLit(keys[i], s, nowMs);
                 }
             }
@@ -78,15 +75,12 @@ namespace okbl {
             // Each Sounding PitchClass lights all of its keys, at the hardest velocity among that
             // PitchClass's keys. It only fades while none of them is held, and then fades from the
             // most recent release.
-            void lightAllOctaves(Lit *lit, const KeyState *keys, const Settings &s, uint32_t nowMs)
-            {
+            void lightAllOctaves(Lit *lit, const KeyState *keys, const Settings &s, uint32_t nowMs) {
                 Lit byClass[12] = {};
-                for (uint8_t i = 0; i < leds::NUM_LEDS; i++)
-                {
+                for (uint8_t i = 0; i < leds::NUM_LEDS; i++) {
                     merge(byClass[keyPitchClass(i)], keyLit(keys[i], s, nowMs));
                 }
-                for (uint8_t i = 0; i < leds::NUM_LEDS; i++)
-                {
+                for (uint8_t i = 0; i < leds::NUM_LEDS; i++) {
                     lit[i] = byClass[keyPitchClass(i)];
                 }
             }
@@ -94,23 +88,19 @@ namespace okbl {
             // Each Sounding Key lights itself and its overtones (okbl::harmonics::OVERTONES), each
             // overtone dimmer. Overtones that land on the same LED add up, so Keys that share
             // overtones (consonant intervals) brighten them.
-            void lightHarmonics(Lit *lit, const KeyState *keys, const Settings &s, uint32_t nowMs)
-            {
-                for (uint8_t i = 0; i < leds::NUM_LEDS; i++)
-                {
+            void lightHarmonics(Lit *lit, const KeyState *keys, const Settings &s, uint32_t nowMs) {
+                for (uint8_t i = 0; i < leds::NUM_LEDS; i++) {
                     lit[i] = {};
                 }
-                for (uint8_t i = 0; i < leds::NUM_LEDS; i++)
-                {
+                for (uint8_t i = 0; i < leds::NUM_LEDS; i++) {
                     Lit k = keyLit(keys[i], s, nowMs);
                     if (!k.velocity)
                         continue;
                     merge(lit[i], k);
-                    for (const harmonics::Overtone &o : harmonics::OVERTONES)
-                    {
+                    for (const harmonics::Overtone &o : harmonics::OVERTONES) {
                         if (i + o.semitones >= leds::NUM_LEDS)
                             break;
-                        Lit overtone = k;
+                        Lit overtone   = k;
                         overtone.level = o.level;
                         merge(lit[i + o.semitones], overtone);
                     }
@@ -128,15 +118,14 @@ namespace okbl {
 
             // color after fadeMs of Pedal Fade; black once it reaches the floor. fullPeak is the
             // largest channel of this LED's color at full brightness.
-            CRGB fade(CRGB color, uint8_t fullPeak, uint32_t fadeMs, uint8_t floorPeak)
-            {
+            CRGB fade(CRGB color, uint8_t fullPeak, uint32_t fadeMs, uint8_t floorPeak) {
                 // At the lowest Master Brightness the floor is near full, which would leave no room
                 // to fade at all: then time it as if the floor were at most half brightness.
                 // raiseToFloor() keeps the LED at the floor, and softer keys still go dark sooner.
                 uint8_t timingFloor = constrain(floorPeak, 1, 127);
                 // halvings from full brightness down to the floor, in 1/256ths
-                uint32_t fullHalvings = lroundf(log2f((float)max<uint8_t>(fullPeak, timingFloor + 1) / timingFloor) * 256);
-                uint32_t halvings = (uint64_t)min(fadeMs, 16 * lights::SUSTAIN_FADE_MS) * fullHalvings / lights::SUSTAIN_FADE_MS;
+                uint32_t fullHalvings = lroundf(log2f((float) max<uint8_t>(fullPeak, timingFloor + 1) / timingFloor) * 256);
+                uint32_t halvings     = (uint64_t) min(fadeMs, 16 * lights::SUSTAIN_FADE_MS) * fullHalvings / lights::SUSTAIN_FADE_MS;
                 if ((halvings >> 8) >= 16)
                     return CRGB::Black;
                 // 2^-halvings in 8.8 fixed point: whole halvings shift, and the fractional part is
@@ -154,10 +143,8 @@ namespace okbl {
 
             // ---- shading: Brightness, then Color ----
 
-            uint8_t brightnessOf(uint8_t velocity, const Settings &s)
-            {
-                switch (s.brightness)
-                {
+            uint8_t brightnessOf(uint8_t velocity, const Settings &s) {
+                switch (s.brightness) {
                 case Brightness::Full:
                     return 255;
                 case Brightness::Velocity:
@@ -171,10 +158,8 @@ namespace okbl {
             // the strip as given and the softest key lands on the brightness floor. Hue-based
             // colors don't take brightness as the CHSV value: FastLED squares that value, which
             // takes soft keys to 0 or 1 per channel and loses the hue.
-            CRGB colorOf(uint8_t ledIndex, uint8_t brightness, const Lit &lit, const Settings &s)
-            {
-                switch (s.color)
-                {
+            CRGB colorOf(uint8_t ledIndex, uint8_t brightness, const Lit &lit, const Settings &s) {
+                switch (s.color) {
                 case Color::Hands:
                     if (lit.corrected)
                         return CRGB(hands::CORRECTED_COLOR).nscale8(brightness);
@@ -188,13 +173,11 @@ namespace okbl {
                     return CRGB(CHSV(s.baseHue, 255, 255)).nscale8(brightness);
                 }
             }
-        }
+        } // namespace
 
-        void computeTargets(CRGB *target, bool *blank, const KeyState *keys, const Settings &s, uint32_t nowMs, uint8_t floorPeak)
-        {
+        void computeTargets(CRGB *target, bool *blank, const KeyState *keys, const Settings &s, uint32_t nowMs, uint8_t floorPeak) {
             Lit lit[leds::NUM_LEDS];
-            switch (s.lightMode)
-            {
+            switch (s.lightMode) {
             case LightMode::AllOctaves:
                 lightAllOctaves(lit, keys, s, nowMs);
                 break;
@@ -209,11 +192,9 @@ namespace okbl {
 
             // Pedal Fade works on the finished color, so it fades at the same rate under every
             // Brightness and Color.
-            for (uint8_t i = 0; i < leds::NUM_LEDS; i++)
-            {
+            for (uint8_t i = 0; i < leds::NUM_LEDS; i++) {
                 blank[i] = lit[i].blank;
-                if (!lit[i].velocity || lit[i].blank)
-                {
+                if (!lit[i].velocity || lit[i].blank) {
                     target[i] = CRGB::Black;
                     continue;
                 }
@@ -223,55 +204,46 @@ namespace okbl {
                 target[i] = colorOf(i, brightness, lit[i], s);
                 if (lit[i].accent)
                     nblend(target[i], CRGB(brightness, brightness, brightness), lit[i].accent);
-                if (lit[i].fading)
-                {
+                if (lit[i].fading) {
                     CRGB full = colorOf(i, 255, lit[i], s);
                     target[i] = fade(target[i], max(full.r, max(full.g, full.b)), lit[i].fadeMs, floorPeak);
                 }
             }
         }
 
-        void previewKeys(KeyState *keys, const Settings &s)
-        {
-            for (uint8_t i = 0; i < leds::NUM_LEDS; i++)
-            {
-                keys[i] = {};
+        void previewKeys(KeyState *keys, const Settings &s) {
+            for (uint8_t i = 0; i < leds::NUM_LEDS; i++) {
+                keys[i]          = {};
                 keys[i].velocity = map(i, 0, leds::NUM_LEDS - 1, 1, 127); // shows off Brightness::Velocity
-                keys[i].hand = hands::bySplitPoint(i);                    // shows off Color::Hands
+                keys[i].hand     = hands::bySplitPoint(i);                // shows off Color::Hands
             }
 
-            switch (s.lightMode)
-            {
-            case LightMode::AllOctaves:
-            {
+            switch (s.lightMode) {
+            case LightMode::AllOctaves: {
                 // one C major chord at middle C; the Light Mode spreads it across the keyboard
                 const uint8_t C4 = 60 - okbl::keys::MIDI_NOTE_LOWEST;
-                for (uint8_t i : {C4, uint8_t(C4 + 4), uint8_t(C4 + 7)})
-                {
-                    keys[i].held = true;
+                for (uint8_t i : {C4, uint8_t(C4 + 4), uint8_t(C4 + 7)}) {
+                    keys[i].held     = true;
                     keys[i].velocity = 127;
                 }
                 break;
             }
-            case LightMode::Harmonics:
-            {
+            case LightMode::Harmonics: {
                 // a C major chord at C3, so its overtones (up to C5) overlap and add up
                 const uint8_t C3 = 48 - okbl::keys::MIDI_NOTE_LOWEST;
-                for (uint8_t i : {C3, uint8_t(C3 + 4), uint8_t(C3 + 7)})
-                {
-                    keys[i].held = true;
+                for (uint8_t i : {C3, uint8_t(C3 + 4), uint8_t(C3 + 7)}) {
+                    keys[i].held     = true;
                     keys[i].velocity = 127;
                 }
                 break;
             }
             case LightMode::PressedKey:
             default:
-                for (uint8_t i = 0; i < leds::NUM_LEDS; i++)
-                {
+                for (uint8_t i = 0; i < leds::NUM_LEDS; i++) {
                     keys[i].held = true;
                 }
                 break;
             }
         }
-    }
-}
+    } // namespace render
+} // namespace okbl

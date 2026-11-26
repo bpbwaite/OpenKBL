@@ -79,9 +79,10 @@ cp $B/firmware.bin dist/okbl-firmware-app.bin
 ## Code style
 
 - Formatting comes from [keyboard-lights-firmware/.clang-format](keyboard-lights-firmware/.clang-format)
-  (4-space indents, 160 columns, indented namespaces). Some existing code predates it, so format
-  the code you change (`clang-format -i <file>`) and don't reformat untouched files in the same
-  change. The config doesn't sort includes, so order them by hand.
+  (4-space indents, 160 columns, indented namespaces). Run `clang-format -i` on the files you
+  change. If it isn't on PATH, the VS Code C++ extension ships one under
+  `~/.vscode/extensions/ms-vscode.cpptools-*/LLVM/bin/`. The config doesn't sort includes, so
+  order them by hand.
 - Everything lives in `namespace okbl`, and file-local helpers go in an anonymous namespace.
   Debug macros keep the old `KBL_` prefix.
 - Constants are `static const` in `UPPER_SNAKE` (in `app_conf.h` or `hardware.h`), functions and

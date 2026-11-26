@@ -6,36 +6,30 @@
 #include "hardware.h"
 
 // MIDI protocol constants
-namespace okbl {
-    namespace midi {
-        static const uint8_t CC_SUSTAIN = 64;
+namespace okbl
+{
+    namespace midi
+    {
+        static const uint8_t CC_SUSTAIN       = 64;
         static const uint8_t CC_ALL_SOUND_OFF = 120;
         static const uint8_t CC_ALL_NOTES_OFF = 123;
-    }
-}
+    } // namespace midi
+} // namespace okbl
 
 class MidiSerialTransport {
 public:
-    explicit MidiSerialTransport(HardwareSerial& serial) : serial_(serial) {}
+    explicit MidiSerialTransport(HardwareSerial &serial) : serial_(serial) {}
 
-    void begin(unsigned long baud) {
-        serial_.begin(baud, SERIAL_8N1, okbl::pins::MIDI_RX, -1);
-    }
+    void begin(unsigned long baud) { serial_.begin(baud, SERIAL_8N1, okbl::pins::MIDI_RX, -1); }
 
-    byte read() {
-        return serial_.read();
-    }
+    byte read() { return serial_.read(); }
 
-    void write(byte value) {
-        serial_.write(value);
-    }
+    void write(byte value) { serial_.write(value); }
 
-    unsigned available() {
-        return serial_.available();
-    }
+    unsigned available() { return serial_.available(); }
 
 private:
-    HardwareSerial& serial_;
+    HardwareSerial &serial_;
 };
 
 MidiSerialTransport midiSerialTransport(Serial1);

@@ -22,8 +22,9 @@
 #include "hardware.h"
 #include "rotary_encoder.h"
 
-namespace {
-    const uint32_t CYCLE_MS = 1000;
+namespace
+{
+    const uint32_t CYCLE_MS                = 1000;
     const uint8_t DITHER_GLOBAL_BRIGHTNESS = 127; // FastLED scales by (127 + 1) / 256 = exactly half
 
     CRGB leds[okbl::leds::NUM_LEDS];
@@ -31,72 +32,58 @@ namespace {
     bool dithering = false;
 
     // largest channel value put in the LED buffer for a key, before global brightness
-    uint8_t keyPeak(uint8_t keyIndex)
-    {
+    uint8_t keyPeak(uint8_t keyIndex) {
         return dithering ? 2 * keyIndex + 1 : keyIndex + 1;
     }
 
     // scientific pitch name of a key, e.g. "C#4"
-    void keyName(uint8_t keyIndex, char *out)
-    {
+    void keyName(uint8_t keyIndex, char *out) {
         static const char *NAMES[12] = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"};
-        uint8_t note = keyIndex + okbl::keys::MIDI_NOTE_LOWEST;
+        uint8_t note                 = keyIndex + okbl::keys::MIDI_NOTE_LOWEST;
         sprintf(out, "%s%d", NAMES[note % 12], note / 12 - 1);
     }
 
     // color with its largest channel scaled to exactly `peak`
-    CRGB scaleToPeak(CRGB color, uint8_t peak)
-    {
+    CRGB scaleToPeak(CRGB color, uint8_t peak) {
         uint8_t colorPeak = max(color.r, max(color.g, color.b));
         if (colorPeak == 0)
             return CRGB::Black;
-        return CRGB((color.r * peak + colorPeak / 2) / colorPeak,
-                    (color.g * peak + colorPeak / 2) / colorPeak,
-                    (color.b * peak + colorPeak / 2) / colorPeak);
+        return CRGB((color.r * peak + colorPeak / 2) / colorPeak, (color.g * peak + colorPeak / 2) / colorPeak, (color.b * peak + colorPeak / 2) / colorPeak);
     }
 
-    void fillLEDs()
-    {
-        for (uint8_t i = 0; i < okbl::leds::NUM_LEDS; i++)
-        {
+    void fillLEDs() {
+        for (uint8_t i = 0; i < okbl::leds::NUM_LEDS; i++) {
             leds[i] = scaleToPeak(fullColors[i], keyPeak(i));
         }
     }
 
-    void newColors()
-    {
-        for (CRGB &color : fullColors)
-        {
+    void newColors() {
+        for (CRGB &color : fullColors) {
             color = CHSV(random(256), random(256), 255);
         }
         fillLEDs();
     }
 
-    void applyDithering()
-    {
+    void applyDithering() {
         FastLED.setDither(dithering ? BINARY_DITHER : DISABLE_DITHER);
         FastLED.setBrightness(dithering ? DITHER_GLOBAL_BRIGHTNESS : 255);
         fillLEDs();
-        debugf("Dithering %s: A0 = %s, C8 = %s\n", dithering ? "ON" : "OFF",
-               dithering ? "0.5" : "1", dithering ? "87.5" : "88");
+        debugf("Dithering %s: A0 = %s, C8 = %s\n", dithering ? "ON" : "OFF", dithering ? "0.5" : "1", dithering ? "87.5" : "88");
     }
 
-    void printKeyTable()
-    {
+    void printKeyTable() {
         debugf("Brightness floor test: brightness = largest RGB value reaching the LED\n");
         debugf("key=brightness with dithering off (0.5 lower with dithering on)\n");
         char name[5];
-        for (uint8_t i = 0; i < okbl::leds::NUM_LEDS; i++)
-        {
+        for (uint8_t i = 0; i < okbl::leds::NUM_LEDS; i++) {
             keyName(i, name);
             debugf("%s=%d%s", name, i + 1, (i % 12 == 11) ? "\n" : "  ");
         }
         debugf("\nPress the encoder to toggle dithering.\n");
     }
-}
+} // namespace
 
-void setup()
-{
+void setup() {
     debugStart();
     debugWaitForInterface();
 
@@ -113,21 +100,18 @@ void setup()
     applyDithering();
 }
 
-void loop()
-{
+void loop() {
     if (rotaryPoll().presses % 2) // each press toggles
     {
         dithering = !dithering;
         applyDithering();
     }
 
-    EVERY_N_MILLISECONDS(CYCLE_MS)
-    {
+    EVERY_N_MILLISECONDS(CYCLE_MS) {
         newColors();
     }
     // re-send at the normal frame rate, like the real firmware does; dithering needs it too
-    EVERY_N_MILLISECONDS(okbl::lights::FRAME_MS)
-    {
+    EVERY_N_MILLISECONDS(okbl::lights::FRAME_MS) {
         FastLED.show();
     }
 }

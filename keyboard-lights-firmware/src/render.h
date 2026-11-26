@@ -8,8 +8,10 @@
 
 // Turns key state into LED colors under the current Settings.
 
-namespace okbl {
-    namespace render {
+namespace okbl
+{
+    namespace render
+    {
         // Fills target (NUM_LEDS long) with what each LED should show. Black = not lit (the LED
         // fades out). Runs in two steps so the Settings stay independent: the Light Mode decides
         // which LEDs light and how hard, then Color and Brightness shade each lit LED.
@@ -22,5 +24,5 @@ namespace okbl {
         // Fills keys (NUM_LEDS long) with simulated keys that show off the current Settings,
         // for the Preview.
         void previewKeys(KeyState *keys, const Settings &s);
-    }
-}
+    } // namespace render
+} // namespace okbl

@@ -20,8 +20,10 @@ void onSettingsChanged(); // after any Setting is set: logs the Settings and sho
 void onMenuOpen();        // clears live key state and stops Demo Mode
 void onMenuClose();       // saves the Settings
 
-namespace okbl {
-    namespace menu {
+namespace okbl
+{
+    namespace menu
+    {
         // what an Option's LED shows in the Settings Menu
         using Swatch = CRGB (*)(const Settings &s, uint32_t nowMs);
 
@@ -76,5 +78,5 @@ namespace okbl {
 
         // Fills target (NUM_LEDS long) with the menu: Swatches on Option Keys, black elsewhere.
         void render(CRGB *target, uint32_t nowMs);
-    }
-}
+    } // namespace menu
+} // namespace okbl

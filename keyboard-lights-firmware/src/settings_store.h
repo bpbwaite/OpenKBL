@@ -16,8 +16,10 @@
 // then writes whatever the Settings are by that time. Saving Settings that haven't changed since
 // the last write doesn't touch the flash.
 
-namespace okbl {
-    namespace store {
+namespace okbl
+{
+    namespace store
+    {
         // Replaces s with the saved Settings, keeping defaults for anything not saved.
         void begin(Settings &s);
 
@@ -26,5 +28,5 @@ namespace okbl {
 
         // non-blocking; call every loop. Writes s once a requested save is due.
         void poll(const Settings &s);
-    }
-}
+    } // namespace store
+} // namespace okbl

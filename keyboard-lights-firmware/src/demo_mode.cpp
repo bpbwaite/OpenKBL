@@ -5,39 +5,36 @@
 #include "app_conf.h"
 #include "hardware.h"
 
-namespace okbl {
-    namespace demo {
-        namespace {
+namespace okbl
+{
+    namespace demo
+    {
+        namespace
+        {
             KeyState demoKeys[leds::NUM_LEDS];
             uint32_t keyStartMs[leds::NUM_LEDS];
-            bool isActive = false;
+            bool isActive           = false;
             uint32_t lastActivityMs = 0;
 
-            void updateKeys()
-            {
-                for (uint8_t i = 0; i < leds::NUM_LEDS; i++)
-                {
-                    if (demoKeys[i].held && millis() - keyStartMs[i] >= KEY_MS)
-                    {
+            void updateKeys() {
+                for (uint8_t i = 0; i < leds::NUM_LEDS; i++) {
+                    if (demoKeys[i].held && millis() - keyStartMs[i] >= KEY_MS) {
                         demoKeys[i].held = false;
                     }
                 }
-                EVERY_N_MILLISECONDS(ROLL_MS)
-                {
+                EVERY_N_MILLISECONDS(ROLL_MS) {
                     uint32_t roll = random(ROLL_MAX + 1);
-                    if (roll < leds::NUM_LEDS)
-                    {
-                        demoKeys[roll].held = true;
+                    if (roll < leds::NUM_LEDS) {
+                        demoKeys[roll].held     = true;
                         demoKeys[roll].velocity = random(1, 128);
-                        demoKeys[roll].hand = hands::bySplitPoint(roll);
-                        keyStartMs[roll] = millis();
+                        demoKeys[roll].hand     = hands::bySplitPoint(roll);
+                        keyStartMs[roll]        = millis();
                     }
                 }
             }
-        }
+        } // namespace
 
-        void start()
-        {
+        void start() {
             if (isActive)
                 return;
             onDemoModeStart();
@@ -45,43 +42,35 @@ namespace okbl {
             debugf("Demo mode: on\n");
         }
 
-        void stop()
-        {
+        void stop() {
             if (!isActive)
                 return;
             isActive = false;
-            for (KeyState &key : demoKeys)
-            {
+            for (KeyState &key : demoKeys) {
                 key = {};
             }
             debugf("Demo mode: off\n");
         }
 
-        bool active()
-        {
+        bool active() {
             return isActive;
         }
 
-        void recordActivity()
-        {
+        void recordActivity() {
             lastActivityMs = millis();
         }
 
-        void poll()
-        {
-            if (!isActive && millis() - lastActivityMs >= IDLE_MS)
-            {
+        void poll() {
+            if (!isActive && millis() - lastActivityMs >= IDLE_MS) {
                 start();
             }
-            if (isActive)
-            {
+            if (isActive) {
                 updateKeys();
             }
         }
 
-        const KeyState *keys()
-        {
+        const KeyState *keys() {
             return demoKeys;
         }
-    }
-}
+    } // namespace demo
+} // namespace okbl

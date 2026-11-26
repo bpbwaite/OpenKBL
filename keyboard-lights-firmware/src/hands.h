@@ -20,8 +20,10 @@
 // at any point. A cut moves Keys to the other hand, correcting an earlier guess. It may only move
 // Keys that were close calls, unless nothing else fits at all.
 
-namespace okbl {
-    namespace hands {
+namespace okbl
+{
+    namespace hands
+    {
         enum class Hand : uint8_t {
             Left,
             Right,
@@ -29,10 +31,10 @@ namespace okbl {
 
         // Costs are in half-semitones of distance a hand moves.
         struct Config {
-            uint8_t splitKey;      // lowest Key a fresh right hand takes; below it, the left
-            uint8_t maxSpan;       // semitones a hand reaches, thumb included, lowest to highest Key
-            uint8_t fingerSpan;    // semitones fingers 2-5 reach, the thumb's Key(s) left out
-            uint8_t thumbPairSpan; // most semitones between two Keys the thumb holds together
+            uint8_t splitKey;        // lowest Key a fresh right hand takes; below it, the left
+            uint8_t maxSpan;         // semitones a hand reaches, thumb included, lowest to highest Key
+            uint8_t fingerSpan;      // semitones fingers 2-5 reach, the thumb's Key(s) left out
+            uint8_t thumbPairSpan;   // most semitones between two Keys the thumb holds together
             uint16_t fingerOverCost; // each semitone fingers 2-5 would stretch past fingerSpan
             uint16_t thumbPairCost;  // the thumb holding two Keys
             uint16_t crossCost;      // highest left-hand Key above the lowest right-hand one
@@ -80,14 +82,14 @@ namespace okbl {
             Config cfg;
             bool held[MAX_KEYS];
             Hand hand[MAX_KEYS];
-            uint16_t margin[MAX_KEYS];  // how much cheaper its hand was than the other, when pressed
+            uint16_t margin[MAX_KEYS]; // how much cheaper its hand was than the other, when pressed
             Range anchor[2];
-            bool fresh[2];              // hasn't played since reset(): no anchor yet
+            bool fresh[2]; // hasn't played since reset(): no anchor yet
             // Where each hand stood when every Key was last up. Every Held Key was pressed since,
             // so a hand that gives Keys away is judged from here.
             Range groupAnchor[2];
             bool groupFresh[2];
-            uint8_t lastVelocity[2];    // of the hand's last Key; 0 = none yet
+            uint8_t lastVelocity[2]; // of the hand's last Key; 0 = none yet
             uint8_t movedKeys[MAX_KEYS];
             uint8_t nMoved;
 
@@ -97,5 +99,5 @@ namespace okbl {
             bool mayMove(uint8_t key) const;
             void startGroup();
         };
-    }
-}
+    } // namespace hands
+} // namespace okbl

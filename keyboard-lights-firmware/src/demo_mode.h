@@ -12,8 +12,10 @@
 // stuck keys for when the piano never sends a note-off
 void onDemoModeStart();
 
-namespace okbl {
-    namespace demo {
+namespace okbl
+{
+    namespace demo
+    {
         void start();
         void stop();
         bool active();
@@ -27,5 +29,5 @@ namespace okbl {
         // Simulated keys, kept apart from the live keys.
         // NUM_LEDS long; all released while Demo Mode is off.
         const KeyState *keys();
-    }
-}
+    } // namespace demo
+} // namespace okbl

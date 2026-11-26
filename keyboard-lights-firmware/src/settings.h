@@ -22,7 +22,8 @@
 // Saved Settings (settings_store.h) hold each Option's index, so reordering Options changes
 // what a saved value means; adding at the end doesn't.
 
-namespace okbl {
+namespace okbl
+{
     // which LEDs light for the Sounding Keys
     enum class LightMode : uint8_t {
         PressedKey, // only the pressed key
@@ -66,4 +67,4 @@ namespace okbl {
         BlankOnPress blankOnPress;
         uint8_t baseHue; // FastLED hue (0-255) for Color::BaseHue
     };
-}
+} // namespace okbl
