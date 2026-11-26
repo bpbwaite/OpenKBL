@@ -3,7 +3,7 @@
 // Every CYCLE_MS, every LED gets its own new random color (random hue and saturation).
 // Each key has a fixed brightness, rising by one per key from A0. Brightness here is the
 // largest of the R, G and B values reaching the LED; the other two keep the color's
-// proportions. Color correction, power limiting and sag compensation are all off.
+// proportions. Color correction and power limiting are both off.
 //
 // Press the encoder button to toggle dithering:
 // - off (boot): global brightness 255, A0 = 1, C8 = 88, exactly what's sent to the LED.
