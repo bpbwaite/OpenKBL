@@ -16,7 +16,7 @@
 // then writes whatever the Settings are by that time. Saving Settings that haven't changed since
 // the last write doesn't touch the flash.
 
-namespace kbl {
+namespace okbl {
     namespace store {
         // Replaces s with the saved Settings, keeping defaults for anything not saved.
         void begin(Settings &s);

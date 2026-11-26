@@ -5,7 +5,7 @@
 #include "app_conf.h"
 #include "hardware.h"
 
-namespace kbl {
+namespace okbl {
     namespace demo {
         namespace {
             KeyState demoKeys[leds::NUM_LEDS];

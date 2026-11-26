@@ -1,6 +1,6 @@
 #include "hands.h"
 
-namespace kbl {
+namespace okbl {
     namespace hands {
         namespace {
             // A choice that breaks a hard limit (reach, or more Keys than fingers) costs at least

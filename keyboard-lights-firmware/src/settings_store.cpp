@@ -5,7 +5,7 @@
 #include "app_conf.h"
 #include "settings_menu.h"
 
-namespace kbl {
+namespace okbl {
     namespace store {
         namespace {
             const char *NAMESPACE = "kbl-settings";

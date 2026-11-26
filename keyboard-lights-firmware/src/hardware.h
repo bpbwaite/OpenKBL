@@ -9,7 +9,7 @@
 #error "Set -DPCB_REVISION in platformio.ini"
 #endif
 
-namespace kbl {
+namespace okbl {
     namespace pins {
         static const uint8_t RGB_DATA = GPIO_NUM_3; // D1 (A1)
         static const uint8_t MIDI_RX = GPIO_NUM_5; // D3

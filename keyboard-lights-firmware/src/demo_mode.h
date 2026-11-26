@@ -12,7 +12,7 @@
 // stuck keys for when the piano never sends a note-off
 void onDemoModeStart();
 
-namespace kbl {
+namespace okbl {
     namespace demo {
         void start();
         void stop();

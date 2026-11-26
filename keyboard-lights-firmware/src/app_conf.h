@@ -21,7 +21,7 @@
 
 #define debugf(...) Serial.printf(__VA_ARGS__)
 
-namespace kbl {
+namespace okbl {
     namespace debug {
         static const uint32_t FPS_REPORT_S = 10; // how often the frame rate is printed
     }

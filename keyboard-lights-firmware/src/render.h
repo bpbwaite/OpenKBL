@@ -8,7 +8,7 @@
 
 // Turns key state into LED colors under the current Settings.
 
-namespace kbl {
+namespace okbl {
     namespace render {
         // Fills target (NUM_LEDS long) with what each LED should show. Black = not lit (the LED
         // fades out). Runs in two steps so the Settings stay independent: the Light Mode decides

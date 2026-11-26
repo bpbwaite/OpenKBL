@@ -6,7 +6,7 @@
 #include "hardware.h"
 
 // MIDI protocol constants
-namespace kbl {
+namespace okbl {
     namespace midi {
         static const uint8_t CC_SUSTAIN = 64;
         static const uint8_t CC_ALL_SOUND_OFF = 120;

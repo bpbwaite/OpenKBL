@@ -22,7 +22,7 @@
 // Saved Settings (settings_store.h) hold each Option's index, so reordering Options changes
 // what a saved value means; adding at the end doesn't.
 
-namespace kbl {
+namespace okbl {
     // which LEDs light for the Sounding Keys
     enum class LightMode : uint8_t {
         PressedKey, // only the pressed key

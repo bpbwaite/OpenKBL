@@ -21,7 +21,7 @@ void handleControlChange(byte channel, byte number, byte value);
 void setMasterBrightness(int level);
 void setBaseHue(uint8_t hue);
 
-namespace kbl {
+namespace okbl {
     namespace serialcmd {
         static const byte CHANNEL = 1; // handlers ignore it
         static const uint8_t NOTE_LOWEST = keys::MIDI_NOTE_LOWEST;

@@ -20,7 +20,7 @@
 // at any point. A cut moves Keys to the other hand, correcting an earlier guess. It may only move
 // Keys that were close calls, unless nothing else fits at all.
 
-namespace kbl {
+namespace okbl {
     namespace hands {
         enum class Hand : uint8_t {
             Left,

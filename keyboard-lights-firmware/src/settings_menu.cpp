@@ -5,7 +5,7 @@
 #include "hardware.h"
 #include "pitch_class.h"
 
-namespace kbl {
+namespace okbl {
     namespace menu {
         namespace {
             // ---- Swatches ----

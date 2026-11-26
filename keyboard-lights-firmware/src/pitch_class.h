@@ -4,7 +4,7 @@
 
 #include "hardware.h"
 
-namespace kbl {
+namespace okbl {
     namespace pitch {
         enum PitchClass : uint8_t {
             C = 0, Cs, D, Ds, E, F, Fs, G, Gs, A, As, B,
