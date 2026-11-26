@@ -124,11 +124,9 @@ namespace okbl
                     return c.nscale8(pluck(p));
                 }
 
-                // random twinkle in shifting colors
-                CRGB demo(const Settings &, uint32_t nowMs) {
-                    uint32_t step = nowMs / DEMO_TWINKLE_MS;
-                    uint8_t level = (step * 2654435761u) >> 24; // cheap hash: a new random level each step
-                    return CHSV(phase(nowMs, RAINBOW_PERIOD_MS), 200, max<uint8_t>(level, 32));
+                // dim static white, so it doesn't compete with the Settings' Swatches
+                CRGB demo(const Settings &, uint32_t) {
+                    return CRGB(DEMO_SWATCH_LEVEL, DEMO_SWATCH_LEVEL, DEMO_SWATCH_LEVEL);
                 }
             } // namespace swatch
 

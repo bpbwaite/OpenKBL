@@ -20,24 +20,6 @@ KeyState keyStates[okbl::leds::NUM_LEDS];
 // works out which hand pressed each Key, for Color::Hands; follows keyStates
 okbl::hands::Tracker handTracker(okbl::hands::CONFIG);
 
-// Per-LED brightness scale (255 = unscaled) compensating for supply sag along the strip.
-// Assumes the drop grows linearly from LED 0 (supply end) to FAR_END_VOLTAGE at the last LED,
-// and that each LED's power, and so its brightness, is proportional to its supply voltage.
-// Brighter near-end LEDs are scaled down to match the dimmest (far) one. Strip values are
-// linear PWM duty, so the scale is applied directly to the final colors with no gamma curve.
-uint8_t sagCompensation[okbl::leds::NUM_LEDS];
-
-void buildSagCompensation() {
-    const float sag = okbl::leds::PSU_VOLTAGE - okbl::leds::FAR_END_VOLTAGE;
-    for (uint8_t i = 0; i < okbl::leds::NUM_LEDS; i++) {
-        float ledVoltage      = okbl::leds::PSU_VOLTAGE - sag * i / (okbl::leds::NUM_LEDS - 1);
-        float powerLost       = 1.0f - ledVoltage / okbl::leds::PSU_VOLTAGE; // fraction lost to resistance
-        float farEndPowerLost = sag / okbl::leds::PSU_VOLTAGE;
-        sagCompensation[i]    = lroundf(255.0f * (1.0f - farEndPowerLost) / (1.0f - powerLost));
-    }
-    debugf("Sag compensation: LED 0 = %d, LED %d = %d\n", sagCompensation[0], (int) okbl::leds::NUM_LEDS - 1, sagCompensation[okbl::leds::NUM_LEDS - 1]);
-}
-
 bool sustainPedalDown = false;
 
 okbl::Settings settings  = okbl::lights::DEFAULT_SETTINGS;
@@ -58,8 +40,7 @@ uint8_t floorBeforeScale(uint8_t scale) {
 }
 
 // The floor for Pedal Fade to aim at, from the last frame's global brightness (this frame's
-// isn't known until its LEDs are rendered). Sag compensation dims LEDs nearer the supply by
-// up to ~2% more; raiseToFloor() holds those at the floor for the last moments.
+// isn't known until its LEDs are rendered).
 uint8_t currentFloor() {
     return floorBeforeScale(lastScale);
 }
@@ -312,7 +293,6 @@ uint8_t renderKeys(bool &dither) {
     for (uint8_t i = 0; i < okbl::leds::NUM_LEDS; i++) {
         if (target[i]) {
             kblLEDs[i] = target[i];
-            kblLEDs[i].nscale8_video(sagCompensation[i]); // _video: never takes a lit channel to 0
         }
         else if (blank[i]) {
             kblLEDs[i] = CRGB::Black; // Blank On Press: straight off, not a fade
@@ -367,7 +347,6 @@ void setup() {
         powerBudgetMW = okbl::leds::USB_MAX_MA * okbl::leds::PSU_VOLTAGE;
     }
 
-    buildSagCompensation();
     okbl::menu::begin();
     okbl::store::begin(settings);
 

@@ -179,10 +179,10 @@ namespace okbl
 
         // Swatch animation timing
         static const uint32_t SWATCH_PERIOD_MS  = 1500; // one cycle of the strike and ramp animations
-        static const uint32_t RAINBOW_PERIOD_MS = 4000; // one trip around the hue wheel (PitchHue, Demo)
+        static const uint32_t RAINBOW_PERIOD_MS = 4000; // one trip around the hue wheel (PitchHue)
         static const uint32_t KEY_COLOR_STEP_MS = 400;  // how long KeyColors shows each PitchClass color
         static const uint32_t HANDS_STEP_MS     = 600;  // how long Hands shows each hand's color
-        static const uint32_t DEMO_TWINKLE_MS   = 120;  // how often the Demo key's twinkle changes
+        static const uint8_t DEMO_SWATCH_LEVEL  = 40;   // out of 255: the Demo key's static white
         // Blank On Press swatch: the dark gap between strikes, longer than the real one so it shows
         static const uint32_t BLANK_SWATCH_GAP_MS = 150;
     } // namespace menu

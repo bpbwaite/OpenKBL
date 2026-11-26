@@ -39,10 +39,6 @@ namespace okbl
         static const float LED_DRAW_COMBINED = leds::NUM_LEDS * LED_DRAW_MA;
         static const float USB_MAX_MA        = 500.0; // budget when the board may be powered from USB
 
-        // PER-BOARD (exception to the note above): supply voltage measured at the far end
-        // of the strip (last LED) at full power. Used to even out brightness along the strip.
-        static const float FAR_END_VOLTAGE = 4.92;
-
         // Measured with the brightness_floor test: below this, an LED flickers or shows the
         // wrong color. It's the lowest the largest of R, G and B may be when it reaches the strip,
         // after every scaling step. F#1 (10, or 9.5 dithered) was the highest key that flickered.
