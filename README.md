@@ -2,7 +2,9 @@
 
 OpenKeyBoardLights (okbl) is an embedded project for MIDI piano keyboards. \
 The device sits above the keys of an 88-key piano, and illuminates when keys are played. \
-It's less expensive than some commercial options, and has more features!
+To get the cost down, the light strip is mounted across 8 smaller PCBs that are soldered together. It's less expensive than some commercial options, and has more features!
+
+![](images/pcb-long.png)
 
 *Technologies:* ESP32-C3, PlatformIO, KiCAD 10 - [Custom PCB](piano-pcb/), and a [3D printable case](models/)
 
@@ -23,7 +25,7 @@ Revision 0:
 ---
 | Software Feature | Implemented |
 |-|-|
-| Various color modes | ✅ |
+| Various color modes | ✅ more coming soon |
 | Demo mode (5 min timer) | ✅ |
 | Control over serial | ✅ |
 | Control with desktop app | 🚧 |
@@ -54,6 +56,8 @@ esptool.py --chip esp32c3 --port COMx --baud 460800 write_flash --flash_mode dio
 ## Assembly
 
 - still todo: BOM, gerbers
+
+![](images/demo.JPEG)
 
 ## Credits
 
